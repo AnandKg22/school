@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AKStack CommunityOS | No-Code Community, Learning & Membership Platform",
-  description: "An AI-powered, no-code community, learning and membership platform for creators, educators, and enterprise AI builders.",
+  title: "AKSchool | Community, Learning & Academy Platform",
+  description: "The premier AI-native community, video classroom, and membership platform for builders, creators, and engineers.",
 };
 
 export default function RootLayout({
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="antialiased min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <html lang="en">
+      <body className="antialiased min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#475569] dark:text-slate-100 transition-colors duration-150">
         {children}
       </body>
     </html>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CommunityHeader } from "@/components/CommunityHeader";
 import { AiCopilotModal } from "@/components/AiCopilotModal";
+import { MarkdownViewer } from "@/components/MarkdownViewer";
 import {
   MessageSquare,
   Sparkles,
@@ -19,16 +20,20 @@ import {
   CheckCircle,
   Flame,
   Search,
-  Filter
+  Filter,
+  Calendar,
+  ExternalLink,
+  Settings,
+  Zap,
+  ThumbsUp
 } from "lucide-react";
-import { MOCK_POSTS, MOCK_SPACES, MOCK_MEMBERS, MOCK_COURSES } from "@/lib/school-mock";
+import { MOCK_POSTS, MOCK_SPACES, MOCK_MEMBERS, MOCK_COMMUNITY } from "@/lib/school-mock";
 import { Post, Member, Space } from "@/lib/types";
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [activeSpaceId, setActiveSpaceId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
   const [reportToast, setReportToast] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
@@ -140,158 +145,60 @@ export default function CommunityPage() {
       return matchSpace && matchQuery;
     })
     .sort((a, b) => {
-      if (sortBy === "popular") {
-        return b.likes_count - a.likes_count;
-      }
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col">
-      <CommunityHeader onOpenAiCopilot={() => setIsAiOpen(true)} />
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#475569] dark:text-slate-100 flex flex-col">
+      <CommunityHeader
+        onOpenAiCopilot={() => setIsAiOpen(true)}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Spaces / Categories */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Discussion Spaces
-                </span>
-                <span className="text-xs font-semibold text-amber-500">
-                  {posts.length} Posts
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <button
-                  onClick={() => setActiveSpaceId("all")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeSpaceId === "all"
-                      ? "bg-amber-500 text-white shadow-sm shadow-amber-500/20 font-bold"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>All Discussions</span>
-                  </div>
-                  <span className="text-[10px] opacity-80">{posts.length}</span>
-                </button>
-
-                {MOCK_SPACES.map((space) => {
-                  const count = posts.filter((p) => p.space_id === space.id).length;
-                  const isActive = activeSpaceId === space.id;
-                  return (
-                    <button
-                      key={space.id}
-                      onClick={() => setActiveSpaceId(space.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? "bg-amber-500 text-white shadow-sm shadow-amber-500/20 font-bold"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      <span className="truncate">{space.name}</span>
-                      <span className="text-[10px] opacity-80">{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* MiMo AI Assistant Banner */}
-              <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
-                <button
-                  onClick={() => setIsAiOpen(true)}
-                  className="w-full p-3 rounded-xl bg-gradient-to-tr from-amber-500/10 via-orange-500/10 to-amber-600/10 border border-amber-500/20 hover:border-amber-500/40 text-left transition-all group"
-                >
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">
-                    <Sparkles className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                    <span>Ask Community AI</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Query courses and discussions with Xiaomi MiMo AI
-                  </p>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Column: Feed & Composer */}
-          <div className="lg:col-span-6 space-y-4">
+        {/* Main 2-Column Layout matching Skool Screenshot 4 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Main Feed Column (Left/Center 8 cols) */}
+          <div className="lg:col-span-8 space-y-4">
             {/* Report Toast Notification */}
             {reportToast && (
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center justify-between shadow-sm animate-in fade-in">
+              <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-700 flex items-center justify-between shadow-xs animate-in fade-in">
                 <span>{reportToast}</span>
                 <button
                   onClick={() => setReportToast(null)}
-                  className="text-amber-500 hover:text-amber-700 text-xs px-2"
+                  className="text-blue-500 hover:text-blue-700 text-xs px-2"
                 >
                   ✕
                 </button>
               </div>
             )}
 
-            {/* Real-Time Search & Sort Bar */}
-            <div className="glass-panel p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Search discussions by keyword, topic, or author..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-              <div className="flex items-center gap-1 shrink-0 text-xs">
-                <button
-                  onClick={() => setSortBy("newest")}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                    sortBy === "newest"
-                      ? "bg-amber-500 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  Newest
-                </button>
-                <button
-                  onClick={() => setSortBy("popular")}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                    sortBy === "popular"
-                      ? "bg-amber-500 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  Popular
-                </button>
-              </div>
-            </div>
-
-            {/* Post Authoring Composer */}
-            <div className="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+            {/* "Write something" Input Card (Matches Skool Screenshot 4) */}
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs">
               {!isComposerOpen ? (
                 <div
                   onClick={() => setIsComposerOpen(true)}
-                  className="flex items-center gap-3 cursor-pointer"
+                  className="flex items-center gap-3 cursor-pointer group"
                 >
                   <img
                     src={currentMember.avatar_url}
                     alt={currentMember.full_name}
-                    className="w-9 h-9 rounded-full object-cover ring-2 ring-amber-500/20"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-600/30"
                   />
-                  <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl px-4 py-2.5 text-xs font-medium transition-colors">
-                    Write a post or ask a question to the community...
+                  <div className="flex-1 bg-[#F8FAFC] dark:bg-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors">
+                    Write something...
                   </div>
-                  <button className="px-3 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs hover:bg-amber-600 transition-colors">
+                  <button className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-xs">
                     Post
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleCreatePost} className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0] dark:border-slate-700">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-white">
                       <img
                         src={currentMember.avatar_url}
                         alt={currentMember.full_name}
@@ -302,7 +209,7 @@ export default function CommunityPage() {
                     <select
                       value={newSpaceId}
                       onChange={(e) => setNewSpaceId(e.target.value)}
-                      className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200"
+                      className="text-xs bg-[#F8FAFC] dark:bg-slate-700 border border-[#E2E8F0] dark:border-slate-600 rounded-lg px-2.5 py-1 text-[#0F172A] dark:text-white"
                     >
                       {MOCK_SPACES.map((s) => (
                         <option key={s.id} value={s.id}>
@@ -318,36 +225,72 @@ export default function CommunityPage() {
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="Title: What are you sharing or asking?"
                     required
-                    className="w-full text-sm font-bold bg-transparent border-b border-slate-200 dark:border-slate-800 pb-2 focus:outline-none focus:border-amber-500 text-slate-900 dark:text-white placeholder:text-slate-400"
+                    className="w-full text-sm font-extrabold bg-transparent border-b border-[#E2E8F0] dark:border-slate-700 pb-2 focus:outline-none focus:border-blue-600 text-[#0F172A] dark:text-white placeholder:text-slate-400"
                   />
 
                   <textarea
                     rows={4}
                     value={newContent}
                     onChange={(e) => setNewContent(e.target.value)}
-                    placeholder="Share the details, code snippets, or architectural thoughts..."
+                    placeholder="Share the details, code snippets, or thoughts (supports full Markdown)..."
                     required
-                    className="w-full text-xs sm:text-sm bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                    className="w-full text-xs sm:text-sm bg-[#F8FAFC] dark:bg-slate-900 p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-600 text-[#0F172A] dark:text-slate-100 placeholder:text-slate-400"
                   />
 
                   <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
                       onClick={() => setIsComposerOpen(false)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#0F172A]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={!newTitle.trim() || !newContent.trim()}
-                      className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-md shadow-orange-500/20 disabled:opacity-50 transition-all"
+                      className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all"
                     >
                       Publish Post
                     </button>
                   </div>
                 </form>
               )}
+            </div>
+
+            {/* Event Announcement Banner (Matches Skool Screenshot 4) */}
+            <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900 text-xs font-bold text-blue-900 dark:text-blue-200">
+              <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>AKSchool Live: Advanced Autonomous Agent Loops is happening in 3 days</span>
+            </div>
+
+            {/* Category Filter Chips Bar (Matches Skool Screenshot 4) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setActiveSpaceId("all")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  activeSpaceId === "all"
+                    ? "bg-[#0F172A] text-white shadow-2xs"
+                    : "bg-white dark:bg-slate-800 text-[#475569] dark:text-slate-300 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                All
+              </button>
+              {MOCK_SPACES.map((space) => {
+                const isActive = activeSpaceId === space.id;
+                return (
+                  <button
+                    key={space.id}
+                    onClick={() => setActiveSpaceId(space.id)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                      isActive
+                        ? "bg-[#0F172A] text-white shadow-2xs"
+                        : "bg-white dark:bg-slate-800 text-[#475569] dark:text-slate-300 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{space.name}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Posts Stream */}
@@ -359,59 +302,73 @@ export default function CommunityPage() {
                 return (
                   <article
                     key={post.id}
-                    className="glass-panel p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm transition-all"
+                    className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs transition-all hover:border-slate-300 dark:hover:border-slate-600"
                   >
-                    {/* Post Author Bar */}
-                    <div className="flex items-center justify-between mb-3">
+                    {/* Post Author Bar (Exact Match to Skool Screenshot 4) */}
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={post.author.avatar_url}
-                          alt={post.author.full_name}
-                          className="w-9 h-9 rounded-full object-cover ring-2 ring-amber-500/20"
-                        />
+                        <div className="relative">
+                          <img
+                            src={post.author.avatar_url}
+                            alt={post.author.full_name}
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-600/30"
+                          />
+                          <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-800">
+                            {post.author.level}
+                          </span>
+                        </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            <span className="text-xs font-bold text-[#0F172A] dark:text-white">
                               {post.author.full_name}
                             </span>
-                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                              Lvl {post.author.level}
-                            </span>
+                            {post.author.role === "owner" && (
+                              <Flame className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                            )}
+                            {post.author.role === "admin" && (
+                              <span className="text-[10px] text-blue-600">💎</span>
+                            )}
                           </div>
-                          <div className="text-[10px] text-slate-400">
-                            in <span className="font-semibold text-slate-600 dark:text-slate-300">{spaceInfo?.name || "General"}</span> • {new Date(post.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+                          <div className="text-[11px] text-[#64748B] flex items-center gap-1">
+                            <span>2h</span>
+                            <span>•</span>
+                            <span className="font-semibold text-[#475569] dark:text-slate-300">
+                              {spaceInfo?.name || "General"}
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       {post.is_pinned && (
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
                           <Pin className="w-3 h-3 fill-current" />
                           <span>Pinned</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Post Content */}
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 leading-snug">
+                    {/* Post Title */}
+                    <h2 className="text-base sm:text-lg font-black text-[#0F172A] dark:text-white mb-2 leading-snug">
                       {post.title}
-                    </h3>
-                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed mb-4">
-                      {post.content}
+                    </h2>
+
+                    {/* Post Content rendered in beautiful Markdown format */}
+                    <div className="text-xs sm:text-sm text-[#475569] dark:text-slate-200 mb-4">
+                      <MarkdownViewer content={post.content} />
                     </div>
 
-                    {/* Interactions Bar */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-200/60 dark:border-slate-800/60 text-xs text-slate-500">
+                    {/* Interactions Bar (Exact match to Skool Screenshot 4) */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700/80 text-xs text-[#64748B]">
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => handleToggleLike(post.id)}
-                          className={`flex items-center gap-1.5 font-semibold transition-colors ${
+                          className={`flex items-center gap-1.5 font-bold transition-colors ${
                             post.user_has_liked
-                              ? "text-rose-500 fill-rose-500 font-bold"
-                              : "hover:text-rose-500"
+                              ? "text-blue-600"
+                              : "hover:text-[#0F172A] dark:hover:text-white"
                           }`}
                         >
-                          <Heart className={`w-4 h-4 ${post.user_has_liked ? "fill-current" : ""}`} />
+                          <ThumbsUp className={`w-4 h-4 ${post.user_has_liked ? "fill-current" : ""}`} />
                           <span>{post.likes_count}</span>
                         </button>
 
@@ -422,24 +379,41 @@ export default function CommunityPage() {
                               [post.id]: !isExpanded,
                             })
                           }
-                          className="flex items-center gap-1.5 font-semibold hover:text-amber-500 transition-colors"
+                          className="flex items-center gap-1.5 font-semibold hover:text-[#0F172A] dark:hover:text-white transition-colors"
                         >
                           <MessageCircle className="w-4 h-4" />
-                          <span>{post.comments_count || 0} comments</span>
+                          <span>{post.comments_count || 0}</span>
                         </button>
+
+                        {/* Commenter Avatars Pile as seen in Skool Screenshot */}
+                        {post.comments && post.comments.length > 0 && (
+                          <div className="flex items-center -space-x-1.5 hidden sm:flex">
+                            {post.comments.slice(0, 4).map((c, i) => (
+                              <img
+                                key={i}
+                                src={c.author.avatar_url}
+                                alt={c.author.full_name}
+                                className="w-5 h-5 rounded-full object-cover ring-2 ring-white dark:ring-slate-800"
+                              />
+                            ))}
+                            <span className="text-[10px] text-slate-400 pl-2">
+                              New comment 12m ago
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleReportPost(post.id)}
                           className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
-                          title="Report Post to Moderation Queue"
+                          title="Report Post"
                         >
                           <ShieldCheck className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => alert("Link copied to clipboard!")}
-                          className="p-1 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                          className="p-1 text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition-colors"
                           title="Share Post"
                         >
                           <Share2 className="w-4 h-4" />
@@ -449,22 +423,22 @@ export default function CommunityPage() {
 
                     {/* Threaded Comments Section */}
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-slate-200/40 dark:border-slate-800/40 space-y-3">
+                      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/80 space-y-3">
                         {post.comments && post.comments.length > 0 && (
                           <div className="space-y-2.5">
                             {post.comments.map((comment) => (
                               <div
                                 key={comment.id}
-                                className="flex gap-2.5 bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50 text-xs"
+                                className="flex gap-2.5 bg-[#F8FAFC] dark:bg-slate-900/60 p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-800 text-xs"
                               >
                                 <img
                                   src={comment.author.avatar_url}
                                   alt={comment.author.full_name}
-                                  className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
+                                  className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
                                 />
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-1">
-                                    <span className="font-bold text-slate-900 dark:text-white">
+                                    <span className="font-bold text-[#0F172A] dark:text-white">
                                       {comment.author.full_name}
                                     </span>
                                     <span className="text-[10px] text-slate-400">
@@ -474,9 +448,9 @@ export default function CommunityPage() {
                                       })}
                                     </span>
                                   </div>
-                                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                                    {comment.content}
-                                  </p>
+                                  <div className="text-[#475569] dark:text-slate-300 leading-relaxed">
+                                    <MarkdownViewer content={comment.content} />
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -501,11 +475,11 @@ export default function CommunityPage() {
                               }
                             }}
                             placeholder="Write a comment..."
-                            className="flex-1 text-xs bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder:text-slate-400"
+                            className="flex-1 text-xs bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 rounded-xl px-3.5 py-2 text-[#0F172A] dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                           />
                           <button
                             onClick={() => handleAddComment(post.id)}
-                            className="p-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                            className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-2xs"
                           >
                             <Send className="w-3.5 h-3.5" />
                           </button>
@@ -518,88 +492,121 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          {/* Right Column: Classroom Quick Widget & Community Stats */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Classroom Progress Card */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Classroom Masterclass
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  50% Complete
-                </span>
-              </div>
-
-              <div className="relative rounded-xl overflow-hidden h-28 mb-3">
-                <img
-                  src={MOCK_COURSES[0].cover_url}
-                  alt={MOCK_COURSES[0].title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2.5">
-                  <span className="text-xs font-bold text-white line-clamp-1">
-                    {MOCK_COURSES[0].title}
-                  </span>
+          {/* Right Column: Skool Style Community Card (Matches Skool Screenshot 4) */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden shadow-2xs">
+              {/* Banner Graphic */}
+              <div className="relative h-36 bg-gradient-to-r from-blue-600 to-emerald-500 flex items-center justify-center p-4 text-white">
+                <div className="text-center">
+                  <div className="text-2xl font-black tracking-tight">AKSchool</div>
+                  <div className="text-xs font-bold text-blue-100 mt-0.5">1,248+ People Mastering AI Automation</div>
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden mb-3">
-                <div className="bg-amber-500 h-full w-1/2 rounded-full" />
-              </div>
+              {/* Community Identity & Bio */}
+              <div className="p-5 space-y-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white">
+                    {MOCK_COMMUNITY.name}
+                  </h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-0.5">
+                    school.akstack.com/{MOCK_COMMUNITY.slug}
+                  </p>
+                  <p className="text-xs text-[#475569] dark:text-slate-300 mt-2 leading-relaxed">
+                    {MOCK_COMMUNITY.description}
+                  </p>
+                </div>
 
-              <Link
-                href="/classroom"
-                className="w-full py-2 rounded-xl text-xs font-bold text-center bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 transition-all flex items-center justify-center gap-1.5"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Continue Lesson 2.1</span>
-              </Link>
+                {/* Resource Links List (as in Skool screenshot) */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-700 text-xs">
+                  <a
+                    href="https://youtube.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 p-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-50 transition-colors"
+                  >
+                    <span>📺</span>
+                    <span className="font-semibold">YOUTUBE RESOURCES</span>
+                  </a>
+                  <button
+                    onClick={() => setIsAiOpen(true)}
+                    className="w-full flex items-center gap-2 p-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    <span>🤖</span>
+                    <span className="font-semibold">Nova AI Study Buddy</span>
+                  </button>
+                  <Link
+                    href="/#pricing"
+                    className="flex items-center gap-2 p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 transition-colors"
+                  >
+                    <span>🚀</span>
+                    <span className="font-semibold">Upgrade to Pro Tier</span>
+                  </Link>
+                </div>
+
+                {/* 3-Col Stats Grid (Exact match to Skool Screenshot 4) */}
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-slate-700 text-center">
+                  <div>
+                    <div className="text-base font-extrabold text-[#0F172A] dark:text-white">1,248</div>
+                    <div className="text-[10px] text-slate-400 font-medium">Members</div>
+                  </div>
+                  <div>
+                    <div className="text-base font-extrabold text-[#0F172A] dark:text-white">110</div>
+                    <div className="text-[10px] text-slate-400 font-medium">Online</div>
+                  </div>
+                  <div>
+                    <div className="text-base font-extrabold text-[#0F172A] dark:text-white">2</div>
+                    <div className="text-[10px] text-slate-400 font-medium">Admins</div>
+                  </div>
+                </div>
+
+                {/* Active Member Avatar Pile */}
+                <div className="flex items-center justify-center -space-x-2 pt-2">
+                  {MOCK_MEMBERS.map((m) => (
+                    <img
+                      key={m.id}
+                      src={m.avatar_url}
+                      alt={m.full_name}
+                      className="w-7 h-7 rounded-full object-cover ring-2 ring-white dark:ring-slate-800"
+                    />
+                  ))}
+                </div>
+
+                {/* Settings / Upgrade Action Button */}
+                <div className="pt-2">
+                  <Link
+                    href="/#pricing"
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-center block bg-slate-100 dark:bg-slate-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition-colors text-[#0F172A] dark:text-white uppercase tracking-wider"
+                  >
+                    Membership & Settings
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            {/* Top Builders Leaderboard */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Top Builders
-                </span>
-                <Link
-                  href="/members"
-                  className="text-[11px] font-bold text-amber-500 hover:underline"
-                >
-                  View All
-                </Link>
+            {/* Quick Ask Nova Card */}
+            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#0F172A] dark:text-white">Need Quick Answers?</div>
+                  <div className="text-[10px] text-slate-500">Nova AI is ready to assist you</div>
+                </div>
               </div>
-
-              <div className="space-y-2.5">
-                {MOCK_MEMBERS.slice(0, 3).map((m, idx) => (
-                  <div key={m.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="w-4 font-bold text-slate-400 text-center">
-                        #{idx + 1}
-                      </span>
-                      <img
-                        src={m.avatar_url}
-                        alt={m.full_name}
-                        className="w-6 h-6 rounded-full object-cover"
-                      />
-                      <span className="truncate font-semibold text-slate-800 dark:text-slate-200">
-                        {m.full_name.split(" ")[0]}
-                      </span>
-                    </div>
-                    <span className="text-amber-600 dark:text-amber-400 font-bold shrink-0">
-                      {m.points} pts
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <button
+                onClick={() => setIsAiOpen(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-2xs"
+              >
+                Ask Nova
+              </button>
             </div>
           </div>
         </div>
       </main>
 
-      {/* MiMo AI Knowledge Assistant Modal */}
+      {/* Nova AI Knowledge Assistant Modal */}
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
     </div>
   );

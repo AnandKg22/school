@@ -6,16 +6,28 @@
   :root {
     --background: #f8fafc;
     --foreground: #0f172a;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --primary-blue: #2563eb;
+    --deep-navy: #0f172a;
+    --emerald-green: #10b981;
+    --body-text: #475569;
   }
 
   .dark {
-    --background: #090d16;
+    --background: #0f172a;
     --foreground: #f8fafc;
+    --card-bg: #1e293b;
+    --border-color: #334155;
+    --primary-blue: #3b82f6;
+    --deep-navy: #f8fafc;
+    --emerald-green: #10b981;
+    --body-text: #94a3b8;
   }
 }
 
 body {
-  color: var(--foreground);
+  color: var(--body-text);
   background: var(--background);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
@@ -38,15 +50,37 @@ body {
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
 }
 
 .dark .glass-panel {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(30, 41, 59, 0.8);
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+/* Skool Style Pill Badges */
+.skool-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .skool-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Brand Gradient Utilities */
+.bg-signature-gradient {
+  background: linear-gradient(135deg, #0057FF 0%, #00C48C 100%);
+}
+
+.text-signature-gradient {
+  background: linear-gradient(135deg, #0057FF 0%, #00C48C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

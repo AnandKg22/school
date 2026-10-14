@@ -39,14 +39,14 @@ ${courseSnippets}
 ${postSnippets}
 `;
 
-    const systemPrompt = `You are the AKStack CommunityOS AI Knowledge Copilot.
-You assist members, founders, and learners in the AKStack AI Builders Club community.
+    const systemPrompt = `You are Nova, the friendly, brilliant, and supportive AI Study Buddy for AKSchool.
+You assist members, founders, and students in the AKSchool AI Builders Club.
 
 STRICT INSTRUCTIONS:
 1. Always base your answers on the provided Community Knowledge Repository, Classroom Curriculum, and Discussions.
 2. If citing a course or discussion, explicitly mention the title and source.
-3. Be professional, supportive, concise, and structured (use bullet points and bold highlights).
-4. If asked about how the platform is hosted or built, mention Dokploy VPS orchestration and Supabase PostgreSQL with app-scoped RLS isolation.`;
+3. Be encouraging, clear, concise, structured, and format your answers with clean Markdown (bold highlights, bullet points, and code blocks).
+4. Never mention internal vendor names, token plans, or internal server configurations. Focus entirely on helping the user learn and build great software.`;
 
     let assistantAnswer = "";
     let reasoning = "";
@@ -79,31 +79,30 @@ STRICT INSTRUCTIONS:
         reasoning = choice?.reasoning_content || "";
       } else {
         const errText = await response.text();
-        console.warn(`MiMo API response not OK (${response.status}): ${errText}`);
+        console.warn(`AI API response not OK (${response.status}): ${errText}`);
       }
     } catch (networkErr) {
-      console.warn("External MiMo call failed, using deterministic fallback:", networkErr);
+      console.warn("External AI call failed, using deterministic fallback:", networkErr);
     }
 
     // Fallback if external API was unreachable or empty
     if (!assistantAnswer) {
       const qLower = question.toLowerCase();
       if (qLower.includes("course") || qLower.includes("learn") || qLower.includes("masterclass")) {
-        assistantAnswer = `We currently offer 2 flagship courses in the **Classroom**:\n\n1. **Agentic AI Engineering Masterclass: From Zero to Production** (Free Tier): 4 modules covering autonomous loops, tool calling, and Xiaomi MiMo AI Singapore cluster integration.\n2. **Full-Stack SaaS Platform Engineering with Dokploy & Supabase** (Pro Tier): 6 modules covering automated rolling deploys and isolated multi-tenant architectures.\n\nCheck out the **Classroom** tab to start watching Lesson 1.1 right now!`;
+        assistantAnswer = `We currently offer 2 flagship courses in the **Classroom**:\n\n1. **Agentic AI Engineering Masterclass: From Zero to Production** (Free Tier): 4 modules covering autonomous loops, tool calling, and high-performance reasoning.\n2. **Full-Stack AI Application Engineering & Scalable Cloud Deployments** (Pro Tier): 4 modules covering production Docker containers, automated CI/CD, and robust PostgreSQL architectures.\n\nCheck out the **Classroom** tab to start watching Lesson 1.1 right now!`;
       } else if (qLower.includes("rule") || qLower.includes("guideline") || qLower.includes("conduct")) {
-        assistantAnswer = `**AKStack AI Builders Club Guidelines**:\n\n1. **Be helpful and share real code** — practical implementations over theory.\n2. **No ungrounded hype** — ground claims with benchmarks or metrics.\n3. **Zero spam or aggressive self-promotion**.\n4. **Respect fellow builders** at all skill levels.`;
-      } else if (qLower.includes("mimo") || qLower.includes("ai") || qLower.includes("model")) {
-        assistantAnswer = `This community copilot is powered by **Xiaomi MiMo AI** (\`mimo-v2.6-flash\`) running on the dedicated Singapore Token Plan cluster (\`token-plan-sgp.xiaomimimo.com\`). It features a 1 Million Token context window, rapid sub-second inference, and deep reasoning token generation.`;
+        assistantAnswer = `**AKSchool Community Guidelines**:\n\n1. **Be helpful and share real code** — practical implementations over theory.\n2. **No ungrounded hype** — ground claims with benchmarks or metrics.\n3. **Zero spam** — respect the community focus.\n4. **Respect fellow builders** at all skill levels.`;
+      } else if (qLower.includes("who are you") || qLower.includes("what is your name") || qLower.includes("nova") || qLower.includes("bot")) {
+        assistantAnswer = `Hi there! I am **Nova**, your AKSchool AI Study Buddy 🤖✨.\n\nI am here to help you navigate course materials, understand complex architectural patterns, review code snippets, and answer questions about anything happening in our community. How can I help you today?`;
       } else {
-        assistantAnswer = `Thanks for asking! In the **AKStack AI Builders Club**, members collaborate on building autonomous agent loops, containerized micro-SaaS platforms, and full-stack AI workflows.\n\n- You can browse discussions in **Community Feed**\n- Explore video masterclasses in the **Classroom**\n- View top builders on the **Members** leaderboard\n- Or ask me any specific question about agent architectures!`;
+        assistantAnswer = `Thanks for asking! In the **AKSchool AI Builders Club**, members collaborate on building autonomous agent loops, containerized micro-applications, and full-stack AI workflows.\n\n- You can browse discussions in **Community Feed**\n- Explore video masterclasses in the **Classroom**\n- View top builders on the **Members** directory\n- Or ask me any specific question about building your next project!`;
       }
     }
 
     return NextResponse.json({
       answer: assistantAnswer,
       reasoning: reasoning || null,
-      provider: "Xiaomi MiMo AI (Singapore Gateway)",
-      model,
+      assistantName: "Nova AI",
       grounded: true,
       timestamp: new Date().toISOString(),
     });

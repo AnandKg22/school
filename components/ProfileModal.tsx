@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Mail, Shield, Check, X, Camera, Eye, Lock } from "lucide-react";
+import { User, Check, X, Camera, Eye, Lock, Flame, Calendar, Award, Globe, Users } from "lucide-react";
 import { Member } from "@/lib/types";
 
 interface ProfileModalProps {
@@ -17,6 +17,7 @@ export function ProfileModal({
   member,
   onSave,
 }: ProfileModalProps) {
+  const [activeTab, setActiveTab] = useState<"card" | "edit">("card");
   const [fullName, setFullName] = useState(member.full_name);
   const [handle, setHandle] = useState(member.handle);
   const [bio, setBio] = useState(member.bio || "");
@@ -41,173 +42,295 @@ export function ProfileModal({
     }, 800);
   };
 
+  // Generate simulated activity heatmap matrix (12 months x 4 weeks x 7 days)
+  const months = ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+  const days = ["Mon", "Wed", "Fri", "Sun"];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="glass-panel w-full max-w-lg rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                Member Profile Settings
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Manage your public bio, avatar, and visibility settings
-              </p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-[#E2E8F0] dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Header & Tabs */}
+        <div className="flex items-center justify-between p-5 border-b border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("card")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "card"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-white"
+              }`}
+            >
+              Public Profile & Heatmap
+            </button>
+            <button
+              onClick={() => setActiveTab("edit")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "edit"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A] dark:hover:text-white"
+              }`}
+            >
+              Edit Details
+            </button>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Avatar preview */}
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <img
-                src={avatarUrl}
-                alt={fullName}
-                className="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-500/40"
-              />
-              <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-5 h-5 text-white" />
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-1">
+          {activeTab === "card" ? (
+            <div className="space-y-6">
+              {/* Profile Card View (Exact match to Skool Screenshot 3) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Left/Middle Column: Heatmap & Memberships */}
+                <div className="md:col-span-7 space-y-5">
+                  {/* Activity Heatmap Card */}
+                  <div className="p-4 rounded-2xl border border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-800/40">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#0F172A] dark:text-white">Activity</span>
+                    </div>
+
+                    {/* Months header */}
+                    <div className="flex justify-between text-[10px] text-slate-400 px-7 mb-1.5">
+                      {months.map((m) => (
+                        <span key={m}>{m}</span>
+                      ))}
+                    </div>
+
+                    {/* Heatmap Grid */}
+                    <div className="flex gap-1.5">
+                      <div className="flex flex-col justify-between text-[9px] text-slate-400 py-0.5">
+                        {days.map((d) => (
+                          <span key={d}>{d}</span>
+                        ))}
+                      </div>
+                      <div className="grid grid-flow-col grid-rows-4 gap-1 flex-1">
+                        {Array.from({ length: 48 }).map((_, i) => {
+                          const isActive = i === 14 || i === 22 || i === 31 || i === 47 || i === 46;
+                          return (
+                            <div
+                              key={i}
+                              className={`w-2.5 h-2.5 rounded-[2px] ${
+                                isActive
+                                  ? "bg-emerald-500 shadow-2xs"
+                                  : "bg-slate-200/80 dark:bg-slate-700/60"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="hover:underline cursor-pointer">What is this?</span>
+                      <div className="flex items-center gap-1">
+                        <span>Less</span>
+                        <div className="w-2 h-2 rounded-[1px] bg-slate-200 dark:bg-slate-700" />
+                        <div className="w-2 h-2 rounded-[1px] bg-emerald-200 dark:bg-emerald-900" />
+                        <div className="w-2 h-2 rounded-[1px] bg-emerald-400" />
+                        <div className="w-2 h-2 rounded-[1px] bg-emerald-600" />
+                        <span>More</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Memberships Section */}
+                  <div>
+                    <h4 className="text-xs font-bold text-[#0F172A] dark:text-white mb-2">Memberships</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-800 flex items-center gap-2.5 shadow-2xs">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          AK
+                        </div>
+                        <div className="truncate">
+                          <div className="text-xs font-bold text-[#0F172A] dark:text-white truncate">AKSchool Builders</div>
+                          <div className="text-[10px] text-emerald-600 font-semibold">1,248 • {member.plan_tier.toUpperCase()}</div>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-800 flex items-center gap-2.5 shadow-2xs">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          AI
+                        </div>
+                        <div className="truncate">
+                          <div className="text-xs font-bold text-[#0F172A] dark:text-white truncate">AI Engineering Lab</div>
+                          <div className="text-[10px] text-slate-400">470k • Free</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Member Identity Box */}
+                <div className="md:col-span-5 p-5 rounded-2xl border border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-800/40 flex flex-col items-center text-center">
+                  <div className="relative mb-3">
+                    <img
+                      src={member.avatar_url}
+                      alt={member.full_name}
+                      className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-600/30 shadow-md"
+                    />
+                    <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                      {member.level}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white">
+                    {member.full_name}
+                  </h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-0.5">
+                    @{member.handle}
+                  </p>
+
+                  <p className="text-xs text-[#475569] dark:text-slate-300 mt-3 leading-relaxed text-left">
+                    {member.bio || "Member of AKSchool AI Builders Club."}
+                  </p>
+
+                  <div className="w-full mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-700/60 text-left space-y-1 text-xs text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span>Active 21m ago</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Joined Mar 10, 2024</span>
+                    </div>
+                  </div>
+
+                  {/* 3 Stats Row */}
+                  <div className="w-full mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-3 text-center">
+                    <div>
+                      <div className="text-sm font-extrabold text-[#0F172A] dark:text-white">11</div>
+                      <div className="text-[10px] text-slate-400">Contributions</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-extrabold text-[#0F172A] dark:text-white">0</div>
+                      <div className="text-[10px] text-slate-400">Followers</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-extrabold text-[#0F172A] dark:text-white">2</div>
+                      <div className="text-[10px] text-slate-400">Following</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Avatar Image URL
-              </label>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-          </div>
+          ) : (
+            /* Edit Form View */
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="relative group">
+                  <img
+                    src={avatarUrl}
+                    alt={fullName}
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-blue-600/40"
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-[#0F172A] dark:text-slate-300 mb-1">
+                    Avatar Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
 
-          {/* Full Name & Handle */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Display Name
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Handle
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-xs text-slate-400">@</span>
-                <input
-                  type="text"
-                  required
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
-                  className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#0F172A] dark:text-slate-300 mb-1">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#0F172A] dark:text-slate-300 mb-1">
+                    Handle
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-xs text-slate-400">@</span>
+                    <input
+                      type="text"
+                      required
+                      value={handle}
+                      onChange={(e) => setHandle(e.target.value)}
+                      className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0F172A] dark:text-slate-300 mb-1">
+                  Bio / Expertise
+                </label>
+                <textarea
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="What are you building? e.g. Autonomous AI agents, full-stack systems..."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Bio */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Bio / Expertise
-            </label>
-            <textarea
-              rows={3}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="What are you building? e.g. Autonomous AI agents, SaaS on Supabase..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-
-          {/* Profile Visibility toggle */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2.5">
-              {isPublic ? (
-                <Eye className="w-4 h-4 text-emerald-500" />
-              ) : (
-                <Lock className="w-4 h-4 text-amber-500" />
-              )}
-              <div>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">
-                  Directory Visibility
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {isPublic
-                    ? "Visible in Community Members Directory"
-                    : "Private (Hidden from non-admins)"}
-                </p>
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <Eye className="w-4 h-4 text-emerald-500" />
+                  <div>
+                    <p className="text-xs font-bold text-[#0F172A] dark:text-white">
+                      Directory Visibility
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Visible in AKSchool Members Directory
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Public
+                </span>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsPublic(!isPublic)}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors ${
-                isPublic
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-500"
-              }`}
-            >
-              {isPublic ? "Public" : "Private"}
-            </button>
-          </div>
 
-          {/* Role & Level Pill */}
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span>
-              Role:{" "}
-              <strong className="text-slate-900 dark:text-white capitalize">
-                {member.role === "owner" ? "Super Admin" : member.role}
-              </strong>
-            </span>
-            <span>
-              Level: <strong className="text-amber-500">Lvl {member.level}</strong> ({member.points} pts)
-            </span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-md shadow-orange-500/20 transition-all"
-            >
-              {savedSuccess ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Saved!</span>
-                </>
-              ) : (
-                <span>Save Profile</span>
-              )}
-            </button>
-          </div>
-        </form>
+              <div className="flex items-center justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("card")}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                >
+                  Back to Profile
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all"
+                >
+                  {savedSuccess ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Saved!</span>
+                    </>
+                  ) : (
+                    <span>Save Profile</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

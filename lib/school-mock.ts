@@ -1,14 +1,14 @@
 import { Community, Member, Space, Post, Course, MembershipPlan, AIKnowledgeItem } from "./types";
 
 export const MOCK_COMMUNITY: Community = {
-  id: "comm_akstack_001",
-  name: "AKStack AI Builders Club",
-  slug: "akstack-builders",
-  tagline: "The premier community for autonomous agent engineers, AI founders, and full-stack builders.",
-  description: "Join 1,240+ elite creators and software engineers mastering autonomous agent architectures, multi-tenant cloud systems, and AI-first applications.",
+  id: "comm_akschool_001",
+  name: "AKSchool AI Builders Club",
+  slug: "akschool-builders",
+  tagline: "The premier academy & community for AI engineers, founders, and modern builders.",
+  description: "Join 1,248+ builders mastering autonomous agent architectures, full-stack systems, and modern AI engineering.",
   logo_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80",
   cover_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&auto=format&fit=crop&q=80",
-  rules: "1. Be helpful and share code. 2. No ungrounded hype. 3. Zero spam. 4. Respect fellow builders.",
+  rules: "1. Be helpful and share real code. 2. Ground claims with benchmarks. 3. Zero spam. 4. Respect fellow builders.",
   is_private: false,
   member_count: 1248,
 };
@@ -16,7 +16,7 @@ export const MOCK_COMMUNITY: Community = {
 export const MOCK_MEMBERS: Member[] = [
   {
     id: "usr_admin_001",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     user_id: "usr_admin_001",
     email: "admin@akstack.com",
     full_name: "Akaash Sharma (Super Admin)",
@@ -25,13 +25,13 @@ export const MOCK_MEMBERS: Member[] = [
     role: "owner",
     level: 9,
     points: 3450,
-    bio: "Platform Architect & Founder @ AKStack. Building autonomous agent systems and enterprise developer tooling.",
+    bio: "Platform Architect & Founder @ AKSchool. Building autonomous agent systems and enterprise developer education.",
     plan_tier: "vip",
     created_at: "2026-01-10T10:00:00Z",
   },
   {
     id: "usr_sarah_002",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     user_id: "usr_sarah_002",
     email: "sarah.chen@aiengineer.io",
     full_name: "Sarah Chen",
@@ -40,13 +40,13 @@ export const MOCK_MEMBERS: Member[] = [
     role: "admin",
     level: 7,
     points: 2180,
-    bio: "Staff AI Engineer. Specialized in LLM fine-tuning, RAG evaluations, and prompt engineering frameworks.",
+    bio: "Staff AI Engineer. Specialized in LLM evaluations, autonomous tool architectures, and RAG frameworks.",
     plan_tier: "pro",
     created_at: "2026-02-15T14:30:00Z",
   },
   {
     id: "usr_marcus_003",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     user_id: "usr_marcus_003",
     email: "marcus.v@devopslead.com",
     full_name: "Marcus Vance",
@@ -55,13 +55,13 @@ export const MOCK_MEMBERS: Member[] = [
     role: "moderator",
     level: 5,
     points: 1420,
-    bio: "Cloud & DevOps Lead. Self-hosted Supabase, Dokploy Swarm, and Traefik reverse-proxy wizard.",
+    bio: "Cloud & DevOps Architect. Specialized in distributed containers, CI/CD automation, and high-availability database infrastructure.",
     plan_tier: "pro",
     created_at: "2026-03-01T09:15:00Z",
   },
   {
     id: "usr_priya_004",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     user_id: "usr_priya_004",
     email: "priya.nair@buildwithai.com",
     full_name: "Priya Nair",
@@ -76,7 +76,7 @@ export const MOCK_MEMBERS: Member[] = [
   },
   {
     id: "usr_david_005",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     user_id: "usr_david_005",
     email: "david.ross@saasgrowth.co",
     full_name: "David Ross",
@@ -85,7 +85,7 @@ export const MOCK_MEMBERS: Member[] = [
     role: "member",
     level: 3,
     points: 620,
-    bio: "Product Lead automating repetitive manual sales and marketing operations using AI agent pipelines.",
+    bio: "Product Lead automating operations and enterprise workflows using intelligent AI pipelines.",
     plan_tier: "free",
     created_at: "2026-05-20T11:20:00Z",
   },
@@ -94,17 +94,17 @@ export const MOCK_MEMBERS: Member[] = [
 export const MOCK_SPACES: Space[] = [
   {
     id: "space_announcements",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     name: "🚀 Announcements",
     slug: "announcements",
-    description: "Official releases, new masterclass lectures, and platform updates",
+    description: "Official releases, new masterclass lectures, and academy updates",
     icon: "Megaphone",
     is_private: false,
     sort_order: 1,
   },
   {
     id: "space_general",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     name: "💡 General Discussion",
     slug: "general",
     description: "Brainstorm agent architectures, discuss model benchmarks, and connect",
@@ -114,7 +114,7 @@ export const MOCK_SPACES: Space[] = [
   },
   {
     id: "space_showcase",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     name: "🏆 Project Showcase",
     slug: "showcase",
     description: "Share live demos, get technical peer reviews, and celebrate wins",
@@ -124,10 +124,10 @@ export const MOCK_SPACES: Space[] = [
   },
   {
     id: "space_resources",
-    community_id: "comm_akstack_001",
-    name: "📚 Cheat Sheets & Prompts",
+    community_id: "comm_akschool_001",
+    name: "📚 Code & Blueprints",
     slug: "resources",
-    description: "Curated prompt architectures, API scripts, and Docker templates",
+    description: "Curated prompt architectures, API scripts, and production templates",
     icon: "Bookmark",
     is_private: false,
     sort_order: 4,
@@ -140,17 +140,17 @@ export const MOCK_POSTS: Post[] = [
     space_id: "space_announcements",
     author_id: "usr_admin_001",
     author: MOCK_MEMBERS[0],
-    title: "Welcome to AKStack CommunityOS! The Next-Gen Hub for AI Builders",
-    content: `Welcome everyone to the official AKStack CommunityOS workspace! 🌟
+    title: "🚀 Welcome to AKSchool! The Next-Gen Hub for AI Builders",
+    content: `Welcome everyone to the official **AKSchool** workspace! 🌟
 
 Here is what you have access to right now:
 1. **Community Discussions**: Post questions, share architectural patterns, and connect with fellow developers.
-2. **Classroom Masterclass**: Watch in-depth video modules on building production-grade autonomous agent loops and self-hosted cloud backends.
-3. **AI Knowledge Assistant**: An in-app copilot powered by Xiaomi MiMo AI V2.6 via the high-speed Singapore Token Plan gateway, trained on all community resources.
+2. **Classroom Masterclasses**: Watch in-depth video modules on building production-grade autonomous agent loops and modern cloud backends.
+3. **Nova AI Study Buddy**: An in-app learning companion trained on all AKSchool curriculum and community resources to answer your questions 24/7.
 
-Introduce yourself in the General space below! What agent or SaaS are you currently building?`,
+Introduce yourself in the General space below! What AI project or application are you currently building?`,
     is_pinned: true,
-    likes_count: 54,
+    likes_count: 126,
     comments_count: 4,
     created_at: "2026-10-14T08:00:00Z",
     user_has_liked: true,
@@ -160,7 +160,7 @@ Introduce yourself in the General space below! What agent or SaaS are you curren
         post_id: "post_001",
         author_id: "usr_sarah_002",
         author: MOCK_MEMBERS[1],
-        content: "Excited to be here! The video player layout and lesson progression checklist feel just like Skool. Huge congrats on the launch!",
+        content: "Excited to be here! The video player layout, lecture notes, and clean study guides feel just like Skool. Huge congrats on the launch!",
         likes_count: 12,
         created_at: "2026-10-14T08:30:00Z",
       },
@@ -169,7 +169,7 @@ Introduce yourself in the General space below! What agent or SaaS are you curren
         post_id: "post_001",
         author_id: "usr_marcus_003",
         author: MOCK_MEMBERS[2],
-        content: "Already deployed my first micro-agent following the Lesson 1.2 MiMo guide. Sub-second response latency is incredible.",
+        content: "Already deployed my first autonomous agent pipeline following the Lesson 1.2 architecture guide. Performance is incredible.",
         likes_count: 8,
         created_at: "2026-10-14T09:15:00Z",
       },
@@ -178,7 +178,7 @@ Introduce yourself in the General space below! What agent or SaaS are you curren
         post_id: "post_001",
         author_id: "usr_priya_004",
         author: MOCK_MEMBERS[3],
-        content: "Hello from Bangalore! Working on an AI clinical trial research agent. Looking forward to learning from everyone.",
+        content: "Hello from Bangalore! Working on an AI clinical research agent. Looking forward to learning from everyone.",
         likes_count: 6,
         created_at: "2026-10-14T10:00:00Z",
       },
@@ -187,7 +187,7 @@ Introduce yourself in the General space below! What agent or SaaS are you curren
         post_id: "post_001",
         author_id: "usr_david_005",
         author: MOCK_MEMBERS[4],
-        content: "Love the UI clean light/dark mode aesthetic. Great job Akaash!",
+        content: "Love the clean white space and blue-emerald design aesthetic. Great job Akaash!",
         likes_count: 4,
         created_at: "2026-10-14T11:20:00Z",
       },
@@ -198,15 +198,15 @@ Introduce yourself in the General space below! What agent or SaaS are you curren
     space_id: "space_showcase",
     author_id: "usr_sarah_002",
     author: MOCK_MEMBERS[1],
-    title: "Shipped: Zero-Hallucination Deterministic Semantic Query Router",
-    content: `Just wrapped up an architecture that combines pre-computed SQL statistical metrics (sum, average, 2-sigma variance anomalies) with external LLM synthesis.
+    title: "💎 Shipped: Zero-Hallucination Deterministic Semantic Query Router",
+    content: `Just wrapped up an architecture that combines pre-computed SQL statistical metrics with external LLM synthesis.
 
 By injecting verified numbers directly into the system prompt's ground truth context, the model cannot hallucinate or skew calculations. If external providers encounter a quota timeout, it cleanly degrades to an offline mathematical proof.
 
 Check out the full writeup in Module 2!`,
     is_pinned: false,
     likes_count: 38,
-    comments_count: 2,
+    comments_count: 1,
     created_at: "2026-10-14T12:00:00Z",
     user_has_liked: false,
     comments: [
@@ -226,17 +226,17 @@ Check out the full writeup in Module 2!`,
     space_id: "space_resources",
     author_id: "usr_marcus_003",
     author: MOCK_MEMBERS[2],
-    title: "Production Dokploy VPS Traefik Blueprint with Zero-Downtime Rolling Deploys",
-    content: `Here is our standard stack for hosting containerized Next.js apps with automated Let's Encrypt certificates and Docker Swarm rolling updates:
-- Reverse Proxy: Traefik on port 80/443
-- Container Engine: Docker Swarm / Nixpacks
-- Health Checks: HTTP /api/health with 5s timeouts
-- Multi-Tenant DB: Self-hosted Supabase with prefix isolation (app_<slug>_*)
+    title: "⚡ Production Architecture Blueprint: Automated CI/CD with Zero-Downtime Rolling Deploys",
+    content: `Here is our standard stack for hosting containerized Next.js 15 applications with automated SSL certificates and rolling updates:
+- **Reverse Proxy**: High-throughput routing with automatic SSL renewal
+- **Container Engine**: Production Docker containers with automated health checks
+- **Health Checks**: HTTP \`/api/health\` with automated status monitors
+- **Database Layer**: PostgreSQL with Row-Level Security (RLS) isolation and schema migrations
 
-Let me know if you need help setting this up on your VPS!`,
+Let me know if you need help architecting your cloud infrastructure!`,
     is_pinned: false,
     likes_count: 29,
-    comments_count: 1,
+    comments_count: 0,
     created_at: "2026-10-14T14:15:00Z",
     user_has_liked: true,
   },
@@ -245,10 +245,10 @@ Let me know if you need help setting this up on your VPS!`,
 export const MOCK_COURSES: Course[] = [
   {
     id: "course_agentic_01",
-    community_id: "comm_akstack_001",
+    community_id: "comm_akschool_001",
     title: "Agentic AI Engineering Masterclass: From Zero to Production",
     slug: "agentic-ai-masterclass",
-    description: "Master autonomous agents, tool calling, memory persistence, multi-modal reasoning, and self-hosted Supabase RLS architectures.",
+    description: "Master autonomous agents, tool calling, memory persistence, multi-modal reasoning, and self-hosted database architectures.",
     cover_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
     is_locked: false,
     required_tier: "free",
@@ -275,7 +275,18 @@ Traditional software is deterministic and procedural. Autonomous agents, however
 3. **Act**: Invokes specialized tools (database execution, code synthesis, web queries).
 4. **Observe**: Inspects tool return values, captures errors, and self-corrects without giving up.
 
-> **Key Rule**: The user's instruction is the final deliverable. Abandonment is never an option.`,
+> **Key Rule**: The user's instruction is the final deliverable. Abandonment is never an option.
+
+### Core Implementation Pattern
+
+\`\`\`typescript
+interface AgentLoop {
+  sense: (signal: UserSignal) => TaskPlan;
+  act: (toolCall: ToolInvocation) => Promise<ToolResult>;
+  observe: (result: ToolResult) => NextStepDecision;
+}
+\`\`\`
+`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 14,
             is_free_preview: true,
@@ -285,17 +296,27 @@ Traditional software is deterministic and procedural. Autonomous agents, however
           {
             id: "les_02",
             module_id: "mod_01",
-            title: "Lesson 1.2: Xiaomi MiMo AI V2.6 & Singapore Token Plan Gateway",
-            slug: "mimo-ai-integration",
-            content: `### High-Throughput Reasoning with Xiaomi MiMo AI
+            title: "Lesson 1.2: High-Performance LLM Reasoning & Token Pipelines",
+            slug: "llm-reasoning-pipelines",
+            content: `### High-Throughput Reasoning with Modern LLM Architectures
 
-In this lecture, we connect Xiaomi's flagship **MiMo-V2.6-Flash** model using the regional Singapore Token Plan gateway (\`token-plan-sgp.xiaomimimo.com\`).
+In this lecture, we connect high-performance reasoning models to autonomous execution loops:
 
-Key highlights:
-- 1 Million Token context window
-- Deep reasoning step output before final synthesis
-- Fast sub-second response times for enterprise agent workflows
-- Regional token plan cluster authentication via \`tp-*\` keys`,
+Key architecture pillars:
+- **High-Context Windows**: Managing 1M+ token contexts without hallucination
+- **Reasoning Step Separation**: Emitting intermediate thought chains prior to synthesized user delivery
+- **Sub-Second Streaming**: Token-by-token streaming pipelines for responsive UI feedback
+- **Fallback Resilience**: Automatic failover between reasoning tiers when quotas or timeouts occur
+
+### Implementation Blueprint
+
+\`\`\`typescript
+export async function streamReasoningPipeline(prompt: string) {
+  // Stream reasoning steps to UI, then produce verified final response
+  return await dispatchAgentPipeline({ prompt, temperature: 0.3 });
+}
+\`\`\`
+`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 18,
             is_free_preview: true,
@@ -334,7 +355,12 @@ Instead of discarding history:
             module_id: "mod_02",
             title: "Lesson 2.2: Tool Calling & Error Recovery Protocols",
             slug: "tool-calling-recovery",
-            content: `Learn how to structure schema-defined function calls and handle JSON parse errors gracefully.`,
+            content: `### Tool Calling & Graceful Degradation
+
+Learn how to structure schema-defined function calls and handle JSON parse errors gracefully:
+- Schema validation with strict types
+- Automatic retry on syntax faults
+- Graceful fallbacks when external APIs rate limit`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 16,
             is_free_preview: false,
@@ -347,10 +373,10 @@ Instead of discarding history:
   },
   {
     id: "course_saas_02",
-    community_id: "comm_akstack_001",
-    title: "Full-Stack SaaS Platform Engineering with Dokploy & Supabase",
-    slug: "saas-platform-engineering",
-    description: "Deploy scalable multi-tenant SaaS products with automated GitHub actions, Dokploy VPS orchestration, and isolated PostgreSQL namespaces.",
+    community_id: "comm_akschool_001",
+    title: "Full-Stack AI Application Engineering & Scalable Cloud Deployments",
+    slug: "full-stack-ai-engineering",
+    description: "Deploy scalable multi-tenant AI products with automated GitHub CI/CD, production Docker containers, and isolated PostgreSQL namespaces.",
     cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80",
     is_locked: true,
     required_tier: "pro",
@@ -360,17 +386,23 @@ Instead of discarding history:
       {
         id: "mod_saas_01",
         course_id: "course_saas_02",
-        title: "Module 1: Dokploy VPS & Traefik Routing",
+        title: "Module 1: Cloud Architecture & High-Performance Routing",
         sort_order: 1,
         lessons: [
           {
             id: "les_saas_01",
             module_id: "mod_saas_01",
-            title: "Lesson 1.1: Multi-Container Swarm & Nixpacks Builds",
-            slug: "multi-container-swarm",
-            content: `### Deploying Micro-SaaS on VPS with Dokploy
-In this lecture, we configure Dokploy VPS orchestration on Ubuntu 22.04 with Docker Swarm.
-We cover zero-downtime rolling deploys, automatic Let's Encrypt certificates, and resource constraints.`,
+            title: "Lesson 1.1: Production Docker Containers & Automated CI/CD",
+            slug: "production-docker-containers",
+            content: `### Scalable Cloud Containerization
+
+In this lecture, we configure production Docker containers for full-stack Next.js applications:
+
+We cover:
+- Multi-stage Docker builds minimizing image sizes to < 120MB
+- Automated GitHub Actions CI/CD workflows triggering rolling updates
+- Zero-downtime rolling deploys with automated health monitoring
+- Environment variable injection and secret management`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 22,
             is_free_preview: false,
@@ -380,9 +412,11 @@ We cover zero-downtime rolling deploys, automatic Let's Encrypt certificates, an
           {
             id: "les_saas_02",
             module_id: "mod_saas_01",
-            title: "Lesson 1.2: Traefik Reverse Proxy & Custom Domains",
-            slug: "traefik-custom-domains",
-            content: `Learn how to map customer-owned custom domains and configure CNAME routing dynamically.`,
+            title: "Lesson 1.2: Reverse Proxy Routing & Custom Domain SSL",
+            slug: "reverse-proxy-ssl",
+            content: `### Dynamic SSL & Domain Management
+
+Learn how to manage customer-owned custom domains, configure CNAME routing dynamically, and automate SSL certificate issuance via Let's Encrypt.`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 19,
             is_free_preview: false,
@@ -394,15 +428,20 @@ We cover zero-downtime rolling deploys, automatic Let's Encrypt certificates, an
       {
         id: "mod_saas_02",
         course_id: "course_saas_02",
-        title: "Module 2: Self-Hosted Supabase Multi-Tenancy",
+        title: "Module 2: High-Concurrency PostgreSQL & Multi-Tenant Data Isolation",
         sort_order: 2,
         lessons: [
           {
             id: "les_saas_03",
             module_id: "mod_saas_02",
-            title: "Lesson 2.1: 3-Layer Isolation (Table Prefix, RLS, App Claims)",
-            slug: "supabase-three-layer-isolation",
-            content: `Prevent data leaks between tenants on a single shared PostgreSQL database.`,
+            title: "Lesson 2.1: Multi-Tenant Database Architecture & Row-Level Security",
+            slug: "postgresql-three-layer-isolation",
+            content: `### Enterprise Data Isolation
+
+Learn how to safely host multi-tenant communities on a single PostgreSQL instance:
+1. **Row-Level Security (RLS)**: Enforcing strict tenant boundaries at the database engine level
+2. **Application Claims**: Passing cryptographically signed JWT tokens
+3. **Audit Trails**: Maintaining append-only event logs for compliance`,
             video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
             duration_minutes: 25,
             is_free_preview: false,
@@ -426,21 +465,21 @@ export const MOCK_PLANS: MembershipPlan[] = [
       "Access to Announcements and General spaces",
       "Agentic AI Foundations Masterclass",
       "Community directory profile & achievements",
-      "10 AI Copilot queries per day",
+      "10 Nova AI Study Buddy queries per day",
     ],
     is_active: true,
   },
   {
     id: "plan_pro",
     name: "Pro Builder & Creator",
-    description: "Full access to all advanced masterclasses, private code channels, and unlimited MiMo AI queries.",
+    description: "Full access to all advanced masterclasses, private code channels, and unlimited Nova AI queries.",
     price_monthly: 999,
     currency: "INR",
     features: [
       "Everything in Free, plus:",
-      "Full-Stack SaaS Platform Engineering Course",
+      "Full-Stack AI Application Engineering Course",
       "Private VIP code showcase & review channels",
-      "Unlimited Xiaomi MiMo AI Copilot queries",
+      "Unlimited Nova AI Study Buddy queries",
       "Downloadable production Docker blueprints & prompt packs",
       "Priority direct office-hours support",
     ],
@@ -451,26 +490,26 @@ export const MOCK_PLANS: MembershipPlan[] = [
 export const MOCK_AI_KNOWLEDGE: AIKnowledgeItem[] = [
   {
     id: "k_001",
-    title: "AKStack CommunityOS Guidelines & Conduct",
-    content: "AKStack CommunityOS rules: 1. Be helpful and share real code. 2. No ungrounded hype. 3. Zero spam. 4. Respect fellow builders. Questions should include reproducible examples.",
+    title: "AKSchool Guidelines & Conduct",
+    content: "AKSchool rules: 1. Be helpful and share real code. 2. Ground claims with benchmarks. 3. Zero spam. 4. Respect fellow builders. Questions should include reproducible examples.",
     source_type: "guideline",
   },
   {
     id: "k_002",
-    title: "Agentic AI Masterclass Syllabus",
-    content: "The Agentic AI Engineering Masterclass covers 4 core pillars: Sense, Plan, Act, and Observe. It integrates Xiaomi MiMo AI V2.6 with Singapore Token Plan endpoints for fast high-context inference.",
+    title: "Agentic AI Masterclass Curriculum",
+    content: "The Agentic AI Engineering Masterclass covers 4 core pillars: Sense, Plan, Act, and Observe. It trains students on autonomous loops, tool calling, and high-performance LLM integration.",
     source_type: "lesson",
   },
   {
     id: "k_003",
-    title: "Dokploy & Supabase Architecture",
-    content: "AKStack uses Dokploy VPS on 185.205.244.119 with self-hosted PostgreSQL. Each application is strictly isolated using prefix-based namespacing (app_school_*) and Row-Level Security.",
+    title: "Cloud Architecture & Scalability",
+    content: "AKSchool teaches modern cloud containerization using Docker, automated GitHub CI/CD, and PostgreSQL with Row-Level Security (RLS) data isolation.",
     source_type: "faq",
   },
   {
     id: "k_004",
-    title: "Xiaomi MiMo AI Integration",
-    content: "Xiaomi MiMo AI Token Plan keys (starting with tp- or ttp-) connect to https://token-plan-sgp.xiaomimimo.com/v1. Supported models include mimo-v2.6-flash, mimo-v2.6-pro, and mimo-v2.6-pro-ultraspeed.",
+    title: "Nova AI Study Buddy",
+    content: "Nova is AKSchool's official AI learning companion. Nova indexes classroom masterclasses, community discussions, and code blueprints to provide instant, cited answers to students.",
     source_type: "lesson",
   },
 ];

@@ -7,235 +7,258 @@ import { AiCopilotModal } from "@/components/AiCopilotModal";
 import {
   MessageSquare,
   BookOpen,
-  Award,
   Sparkles,
   ArrowRight,
-  ShieldCheck,
-  Zap,
   Check,
   Play,
   Users,
-  Cpu,
+  Flame,
+  Star,
+  Search,
+  Filter,
+  Shield,
   Layers,
   ChevronRight
 } from "lucide-react";
-import { MOCK_COURSES, MOCK_PLANS, MOCK_SPACES, MOCK_MEMBERS } from "@/lib/school-mock";
+import { MOCK_COURSES, MOCK_PLANS } from "@/lib/school-mock";
 
 export default function HomePage() {
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = [
+    { label: "Trending", icon: "🔥" },
+    { label: "AI Engineering", icon: "🤖" },
+    { label: "Agentic Systems", icon: "⚡" },
+    { label: "Full-Stack Cloud", icon: "💻" },
+    { label: "SaaS Builders", icon: "🚀" },
+    { label: "Showcases", icon: "🏆" },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#475569] dark:text-slate-100 flex flex-col">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.12),rgba(0,0,0,0))]" />
-        
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 border-b border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold mb-8 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-            <span>AKStack CommunityOS 1.0 • Powered by Xiaomi MiMo AI</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-bold mb-6 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+            <span>AKSchool • The Modern Academy & Community Platform</span>
           </div>
 
           {/* Heading */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-[1.1]">
-            Own Your Community, Masterclasses &{" "}
-            <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-              Paid Memberships
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-[#0F172A] dark:text-white max-w-4xl mx-auto leading-[1.1]">
+            Master Autonomous AI & Build With{" "}
+            <span className="text-signature-gradient">
+              Fellow Engineers
             </span>
           </h1>
 
-          <p className="mt-6 text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
-            The no-code, AI-native alternative to Skool. Launch branded discussion spaces, video classrooms, automated tier gating, and an in-app AI knowledge copilot.
+          <p className="mt-5 text-base sm:text-xl text-[#475569] dark:text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+            The all-in-one academy for software engineers and founders. Watch structured video masterclasses, share verified code blueprints, and study with <strong>Nova AI</strong>.
           </p>
 
           {/* Actions */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/community"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-base font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/35 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>Explore Live Community</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Explore Community & Academy</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <button
               onClick={() => setIsAiOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-base font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all hover:scale-[1.02]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold text-[#0F172A] dark:text-slate-200 bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all hover:scale-[1.02]"
             >
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Ask MiMo Copilot</span>
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span>Ask Nova AI Study Buddy</span>
             </button>
           </div>
 
           {/* Key Metrics Strip */}
-          <div className="mt-16 pt-8 border-t border-slate-200/60 dark:border-slate-800/60 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="mt-14 pt-8 border-t border-[#E2E8F0] dark:border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">1,248+</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Active AI Builders</div>
+              <div className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white">1,248+</div>
+              <div className="text-xs text-[#64748B] mt-1">Active AI Builders</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-amber-500">100%</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Grounded AI Accuracy</div>
+              <div className="text-2xl sm:text-3xl font-black text-emerald-600">100%</div>
+              <div className="text-xs text-[#64748B] mt-1">Verified Code Blueprints</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">&lt;0.8s</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">MiMo Inference Speed</div>
+              <div className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white">2 Flagship</div>
+              <div className="text-xs text-[#64748B] mt-1">Academy Masterclasses</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Isolated RLS</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Self-Hosted PostgreSQL</div>
+              <div className="text-2xl sm:text-3xl font-black text-blue-600">24/7 Live</div>
+              <div className="text-xs text-[#64748B] mt-1">Nova AI Study Buddy</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Skool-Style Features Grid */}
-      <section id="features" className="py-16 sm:py-24 bg-white dark:bg-slate-950/60 border-y border-slate-200/80 dark:border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-amber-500">
-              Complete Community OS
-            </h2>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Everything Needed to Run a Thriving Community & Academy
-            </p>
+      {/* Skool Explore Style Category Filters & Featured Courses */}
+      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        {/* Category Pill Bar (Exact match to Skool Screenshot 1) */}
+        <div className="flex items-center justify-between gap-3 mb-8 pb-2 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedCategory("All")}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                selectedCategory === "All"
+                  ? "bg-[#0F172A] text-white shadow-xs"
+                  : "bg-white dark:bg-slate-800 text-[#475569] dark:text-slate-300 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              All Topics
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.label}
+                onClick={() => setSelectedCategory(cat.label)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedCategory === cat.label
+                    ? "bg-[#0F172A] text-white shadow-xs"
+                    : "bg-white dark:bg-slate-800 text-[#475569] dark:text-slate-300 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:border-amber-500/50 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6">
-                <MessageSquare className="w-6 h-6" />
+          <button className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold bg-white dark:bg-slate-800 text-[#475569] border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50 shrink-0">
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filter</span>
+          </button>
+        </div>
+
+        {/* Featured Academy Cards (Matches Skool 3-Column Card Layout) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card 1: Agentic Masterclass */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col group">
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={MOCK_COURSES[0].cover_url}
+                alt={MOCK_COURSES[0].title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#0F172A]/90 text-white backdrop-blur-sm">
+                FREE MASTERCLASS
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
-                Discussion Spaces & Feed
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
+                    AK
+                  </div>
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">AKSchool Engineering</span>
+                </div>
+                <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white mb-2 line-clamp-1">
+                  {MOCK_COURSES[0].title}
+                </h3>
+                <p className="text-xs text-[#475569] dark:text-slate-300 line-clamp-2 leading-relaxed">
+                  {MOCK_COURSES[0].description}
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-1 font-semibold text-[#0F172A] dark:text-white">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span>1,248</span>
+                </div>
+                <div className="flex items-center gap-1 text-emerald-600 font-bold">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>5.0 (89)</span>
+                </div>
+                <span className="font-extrabold text-blue-600">Free Access</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Pro Application Engineering */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col group">
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={MOCK_COURSES[1].cover_url}
+                alt={MOCK_COURSES[1].title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-600 text-white backdrop-blur-sm">
+                PRO ACADEMY
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px]">
+                    CL
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Production Systems</span>
+                </div>
+                <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white mb-2 line-clamp-1">
+                  {MOCK_COURSES[1].title}
+                </h3>
+                <p className="text-xs text-[#475569] dark:text-slate-300 line-clamp-2 leading-relaxed">
+                  {MOCK_COURSES[1].description}
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-1 font-semibold text-[#0F172A] dark:text-white">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span>620</span>
+                </div>
+                <div className="flex items-center gap-1 text-emerald-600 font-bold">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>5.0 (42)</span>
+                </div>
+                <span className="font-extrabold text-[#0F172A] dark:text-white">₹999/mo</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Nova AI Copilot Card */}
+          <div className="bg-gradient-to-tr from-blue-600 to-emerald-500 text-white rounded-2xl p-6 shadow-md flex flex-col justify-between relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black mb-2">
+                Nova AI Study Buddy
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Organize conversations into clear spaces (Announcements, Q&A, Showcases). Author posts with rich formatting, emoji reactions, threaded comments, and pinned announcements.
+              <p className="text-xs text-blue-50 leading-relaxed mb-6">
+                Have questions while building? Nova indexes every lecture, discussion, and code blueprint to guide you 24/7 with zero hallucinations.
               </p>
-              <Link href="/community" className="mt-6 inline-flex items-center gap-1.5 text-xs font-bold text-amber-500 hover:text-amber-600">
-                <span>View Community Feed</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
             </div>
 
-            {/* Feature 2 */}
-            <div className="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:border-amber-500/50 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mb-6">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
-                Classroom Masterclasses
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Structured Course → Module → Lesson hierarchy. Video player, markdown lesson guides, resource downloads, and instant progress checkmarks for students.
-              </p>
-              <Link href="/classroom" className="mt-6 inline-flex items-center gap-1.5 text-xs font-bold text-amber-500 hover:text-amber-600">
-                <span>Explore Classroom</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="glass-panel p-8 rounded-3xl relative overflow-hidden group hover:border-amber-500/50 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
-                Xiaomi MiMo AI Copilot
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                An intelligent knowledge assistant connected to the Singapore Token Plan cluster (\`mimo-v2.6-flash\`). Indexes all community discussions and course lessons for instant, cited answers.
-              </p>
-              <button onClick={() => setIsAiOpen(true)} className="mt-6 inline-flex items-center gap-1.5 text-xs font-bold text-amber-500 hover:text-amber-600">
-                <span>Launch AI Assistant</span>
-                <ChevronRight className="w-4 h-4" />
+            <div className="relative z-10 pt-4 border-t border-white/20">
+              <button
+                onClick={() => setIsAiOpen(true)}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-white text-blue-700 hover:bg-blue-50 transition-colors shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <span>Chat with Nova</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Classroom Preview Section */}
-      <section className="py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-amber-500">
-                Featured Academy Curriculum
-              </h2>
-              <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">
-                Master Autonomous Agents & Full-Stack Cloud Engineering
-              </p>
-            </div>
-            <Link
-              href="/classroom"
-              className="mt-4 md:mt-0 text-sm font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
-            >
-              <span>Browse All Masterclasses</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {MOCK_COURSES.map((course) => (
-              <div
-                key={course.id}
-                className="glass-panel rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 transition-all flex flex-col"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={course.cover_url}
-                    alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-900/80 text-white backdrop-blur-md border border-white/10">
-                    {course.required_tier === "free" ? "Free Tier" : "Pro Membership"}
-                  </div>
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-xs font-semibold text-amber-400">
-                      {course.total_lessons} Lessons Included
-                    </span>
-                    <h3 className="text-lg font-bold truncate">{course.title}</h3>
-                  </div>
-                </div>
-
-                <div className="p-6 flex-1 flex flex-col justify-between">
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                    {course.description}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      Access: {course.required_tier === "free" ? "Open to all members" : "Pro Tier Members"}
-                    </span>
-                    <Link
-                      href="/classroom"
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 transition-colors flex items-center gap-1.5"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Start Learning</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing / Membership Plans */}
-      <section id="pricing" className="py-16 sm:py-24 bg-slate-100/50 dark:bg-slate-950/40 border-t border-slate-200/80 dark:border-slate-800/80">
+      <section id="pricing" className="py-16 bg-white dark:bg-slate-900 border-t border-[#E2E8F0] dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-amber-500">
-              Transparent Membership Tiers
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-blue-600">
+              Straightforward Membership
             </h2>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Join for Free, Upgrade for Full Enterprise Mastery
+            <p className="mt-2 text-3xl font-black text-[#0F172A] dark:text-white">
+              Join For Free, Scale With Pro
             </p>
           </div>
 
@@ -243,32 +266,32 @@ export default function HomePage() {
             {MOCK_PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`glass-panel rounded-3xl p-8 flex flex-col justify-between relative ${
+                className={`bg-white dark:bg-slate-800 rounded-3xl p-8 flex flex-col justify-between relative border ${
                   plan.price_monthly > 0
-                    ? "border-amber-500/40 ring-1 ring-amber-500/20 shadow-xl"
-                    : "border-slate-200 dark:border-slate-800"
+                    ? "border-blue-600 ring-2 ring-blue-600 shadow-xl"
+                    : "border-[#E2E8F0] dark:border-slate-700"
                 }`}
               >
                 {plan.price_monthly > 0 && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
                     Most Popular Builder Plan
                   </div>
                 )}
 
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</p>
+                  <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">{plan.name}</h3>
+                  <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1">{plan.description}</p>
 
                   <div className="mt-6 flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white">
+                    <span className="text-4xl font-black text-[#0F172A] dark:text-white">
                       ₹{plan.price_monthly}
                     </span>
                     <span className="text-xs text-slate-500">/month</span>
                   </div>
 
-                  <ul className="mt-8 space-y-3">
+                  <ul className="mt-6 space-y-3">
                     {plan.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                      <li key={idx} className="flex items-start gap-2.5 text-xs text-[#475569] dark:text-slate-300">
                         <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </li>
@@ -276,13 +299,13 @@ export default function HomePage() {
                   </ul>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-200/60 dark:border-slate-800/60">
+                <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
                   <Link
                     href="/community"
                     className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm text-center block transition-all ${
                       plan.price_monthly > 0
-                        ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-md shadow-orange-500/20"
-                        : "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700"
+                        ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-600/20"
+                        : "bg-slate-100 dark:bg-slate-700 text-[#0F172A] dark:text-white hover:bg-slate-200"
                     }`}
                   >
                     {plan.price_monthly === 0 ? "Get Started for Free" : "Upgrade to Pro Tier"}
@@ -295,22 +318,22 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto py-12 border-t border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 text-slate-500 text-xs text-center">
+      <footer className="mt-auto py-8 border-t border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 text-xs text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
               <Layers className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-slate-900 dark:text-white">AKStack CommunityOS</span>
-            <span>• An AI-Native Platform</span>
+            <span className="font-extrabold text-[#0F172A] dark:text-white">AKSchool</span>
+            <span>• Built for AI Engineers & Builders</span>
           </div>
           <div>
-            Powered by Xiaomi MiMo AI V2.6 • Hosted with Dokploy VPS & Supabase
+            © {new Date().getFullYear()} AKSchool. All rights reserved.
           </div>
         </div>
       </footer>
 
-      {/* MiMo AI Assistant Modal */}
+      {/* Nova AI Study Buddy Modal */}
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
     </div>
   );
