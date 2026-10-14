@@ -27,6 +27,9 @@ import { Post, Member, Space } from "@/lib/types";
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [activeSpaceId, setActiveSpaceId] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
+  const [reportToast, setReportToast] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
 
@@ -49,6 +52,11 @@ export default function CommunityPage() {
       if (found) setCurrentMember(found);
     }
   }, []);
+
+  const handleReportPost = (postId: string) => {
+    setReportToast("Post has been flagged and submitted to the Moderation Queue for review.");
+    setTimeout(() => setReportToast(null), 3000);
+  };
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,10 +129,22 @@ export default function CommunityPage() {
     setExpandedComments({ ...expandedComments, [postId]: true });
   };
 
-  const filteredPosts =
-    activeSpaceId === "all"
-      ? posts
-      : posts.filter((p) => p.space_id === activeSpaceId);
+  const filteredPosts = posts
+    .filter((p) => {
+      const matchSpace = activeSpaceId === "all" || p.space_id === activeSpaceId;
+      const matchQuery =
+        !searchQuery.trim() ||
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.author.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchSpace && matchQuery;
+    })
+    .sort((a, b) => {
+      if (sortBy === "popular") {
+        return b.likes_count - a.likes_count;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
   return (
     <div className="min-h-screen bg-slate-100/70 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col">
@@ -200,6 +220,55 @@ export default function CommunityPage() {
 
           {/* Middle Column: Feed & Composer */}
           <div className="lg:col-span-6 space-y-4">
+            {/* Report Toast Notification */}
+            {reportToast && (
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center justify-between shadow-sm animate-in fade-in">
+                <span>{reportToast}</span>
+                <button
+                  onClick={() => setReportToast(null)}
+                  className="text-amber-500 hover:text-amber-700 text-xs px-2"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Real-Time Search & Sort Bar */}
+            <div className="glass-panel p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search discussions by keyword, topic, or author..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div className="flex items-center gap-1 shrink-0 text-xs">
+                <button
+                  onClick={() => setSortBy("newest")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
+                    sortBy === "newest"
+                      ? "bg-amber-500 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  Newest
+                </button>
+                <button
+                  onClick={() => setSortBy("popular")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
+                    sortBy === "popular"
+                      ? "bg-amber-500 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  Popular
+                </button>
+              </div>
+            </div>
+
             {/* Post Authoring Composer */}
             <div className="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
               {!isComposerOpen ? (
@@ -360,13 +429,22 @@ export default function CommunityPage() {
                         </button>
                       </div>
 
-                      <button
-                        onClick={() => alert("Link copied to clipboard!")}
-                        className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-                        title="Share Post"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleReportPost(post.id)}
+                          className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                          title="Report Post to Moderation Queue"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => alert("Link copied to clipboard!")}
+                          className="p-1 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                          title="Share Post"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Threaded Comments Section */}

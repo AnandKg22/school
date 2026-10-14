@@ -354,9 +354,64 @@ Instead of discarding history:
     cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80",
     is_locked: true,
     required_tier: "pro",
-    total_lessons: 6,
+    total_lessons: 4,
     sort_order: 2,
-    modules: [],
+    modules: [
+      {
+        id: "mod_saas_01",
+        course_id: "course_saas_02",
+        title: "Module 1: Dokploy VPS & Traefik Routing",
+        sort_order: 1,
+        lessons: [
+          {
+            id: "les_saas_01",
+            module_id: "mod_saas_01",
+            title: "Lesson 1.1: Multi-Container Swarm & Nixpacks Builds",
+            slug: "multi-container-swarm",
+            content: `### Deploying Micro-SaaS on VPS with Dokploy
+In this lecture, we configure Dokploy VPS orchestration on Ubuntu 22.04 with Docker Swarm.
+We cover zero-downtime rolling deploys, automatic Let's Encrypt certificates, and resource constraints.`,
+            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            duration_minutes: 22,
+            is_free_preview: false,
+            sort_order: 1,
+            is_completed: false,
+          },
+          {
+            id: "les_saas_02",
+            module_id: "mod_saas_01",
+            title: "Lesson 1.2: Traefik Reverse Proxy & Custom Domains",
+            slug: "traefik-custom-domains",
+            content: `Learn how to map customer-owned custom domains and configure CNAME routing dynamically.`,
+            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            duration_minutes: 19,
+            is_free_preview: false,
+            sort_order: 2,
+            is_completed: false,
+          },
+        ],
+      },
+      {
+        id: "mod_saas_02",
+        course_id: "course_saas_02",
+        title: "Module 2: Self-Hosted Supabase Multi-Tenancy",
+        sort_order: 2,
+        lessons: [
+          {
+            id: "les_saas_03",
+            module_id: "mod_saas_02",
+            title: "Lesson 2.1: 3-Layer Isolation (Table Prefix, RLS, App Claims)",
+            slug: "supabase-three-layer-isolation",
+            content: `Prevent data leaks between tenants on a single shared PostgreSQL database.`,
+            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            duration_minutes: 25,
+            is_free_preview: false,
+            sort_order: 1,
+            is_completed: false,
+          },
+        ],
+      },
+    ],
   },
 ];
 

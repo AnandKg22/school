@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CommunityHeader } from "@/components/CommunityHeader";
 import { AiCopilotModal } from "@/components/AiCopilotModal";
+import { MembershipModal } from "@/components/MembershipModal";
 import {
   Play,
   CheckCircle,
@@ -17,10 +18,11 @@ import {
   ArrowRight,
   ArrowLeft,
   Download,
-  Share2
+  Share2,
+  Zap
 } from "lucide-react";
-import { MOCK_COURSES } from "@/lib/school-mock";
-import { CourseLesson, CourseModule } from "@/lib/types";
+import { MOCK_COURSES, MOCK_MEMBERS } from "@/lib/school-mock";
+import { CourseLesson, CourseModule, Member } from "@/lib/types";
 
 export default function ClassroomPage() {
   const [activeCourse, setActiveCourse] = useState(MOCK_COURSES[0]);
@@ -28,9 +30,25 @@ export default function ClassroomPage() {
     MOCK_COURSES[0].modules![0].lessons[0]
   );
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isMembershipOpen, setIsMembershipOpen] = useState(false);
+  const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({
     les_01: true,
   });
+
+  useEffect(() => {
+    const saved = localStorage.getItem("school_active_member_id");
+    if (saved) {
+      const found = MOCK_MEMBERS.find((m) => m.id === saved);
+      if (found) setCurrentMember(found);
+    }
+  }, []);
+
+  const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
+    const updated = { ...currentMember, plan_tier: newTier };
+    setCurrentMember(updated);
+    localStorage.setItem("school_active_member_id", updated.id);
+  };
 
   const toggleLessonCompletion = (lessonId: string) => {
     setCompletedLessons((prev) => ({
@@ -38,6 +56,8 @@ export default function ClassroomPage() {
       [lessonId]: !prev[lessonId],
     }));
   };
+
+  const isLocked = activeCourse.required_tier === "pro" && currentMember.plan_tier === "free";
 
   const totalLessonsCount =
     activeCourse.modules?.reduce((acc, m) => acc + m.lessons.length, 0) || 0;
@@ -50,6 +70,45 @@ export default function ClassroomPage() {
       <CommunityHeader onOpenAiCopilot={() => setIsAiOpen(true)} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        {/* Course Selection Tabs */}
+        <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-none">
+          {MOCK_COURSES.map((course) => {
+            const isSelected = activeCourse.id === course.id;
+            return (
+              <button
+                key={course.id}
+                onClick={() => {
+                  setActiveCourse(course);
+                  if (course.modules && course.modules.length > 0 && course.modules[0].lessons.length > 0) {
+                    setActiveLesson(course.modules[0].lessons[0]);
+                  }
+                }}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+                  isSelected
+                    ? "bg-amber-500 text-white shadow-md shadow-orange-500/20"
+                    : "glass-panel text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>{course.title}</span>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    course.required_tier === "pro"
+                      ? isSelected
+                        ? "bg-white/20 text-white"
+                        : "bg-amber-500/10 text-amber-500"
+                      : isSelected
+                      ? "bg-white/20 text-white"
+                      : "bg-emerald-500/10 text-emerald-500"
+                  }`}
+                >
+                  {course.required_tier.toUpperCase()}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Course Banner Strip */}
         <div className="glass-panel p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -81,8 +140,30 @@ export default function ClassroomPage() {
           </div>
         </div>
 
-        {/* Video & Curriculum Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Locked Course Gate or Main Player */}
+        {isLocked ? (
+          <div className="glass-panel p-10 rounded-3xl border border-amber-500/30 text-center max-w-2xl mx-auto my-8 space-y-4 shadow-xl">
+            <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
+              Pro Masterclass Locked
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+              <strong>{activeCourse.title}</strong> requires an active <strong>Pro Creator</strong> membership. Upgrade to unlock all modules, production Docker Swarm blueprints, and priority architecture reviews.
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={() => setIsMembershipOpen(true)}
+                className="px-6 py-3 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all"
+              >
+                Upgrade to Pro Tier (₹999/mo)
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Video & Curriculum Split Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Column: Video Player & Lecture Notes */}
           <div className="lg:col-span-8 space-y-6">
             {/* 16:9 Video Player */}
@@ -259,9 +340,18 @@ export default function ClassroomPage() {
             </div>
           </div>
         </div>
+        )}
       </main>
 
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+
+      <MembershipModal
+        isOpen={isMembershipOpen}
+        onClose={() => setIsMembershipOpen(false)}
+        currentMember={currentMember}
+        onUpdateTier={handleUpdateTier}
+      />
     </div>
   );
 }
+
