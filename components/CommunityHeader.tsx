@@ -33,6 +33,7 @@ import { MOCK_MEMBERS } from "@/lib/school-mock";
 import { Member } from "@/lib/types";
 import { MembershipModal } from "./MembershipModal";
 import { ProfileModal } from "./ProfileModal";
+import { getActiveMember, saveActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 
 export interface NotificationItem {
   id: string;
@@ -188,11 +189,14 @@ export function CommunityHeader({
     if (typeof window !== "undefined" && document.documentElement.classList.contains("dark")) {
       setIsDark(true);
     }
-    const saved = localStorage.getItem("school_active_member_id");
-    if (saved) {
-      const found = MOCK_MEMBERS.find((m) => m.id === saved);
-      if (found) setCurrentMember(found);
-    }
+    // Load persisted member profile from localStorage
+    setCurrentMember(getActiveMember());
+
+    // Listen to real-time profile updates across tabs/components
+    const unsubscribe = subscribeToMemberUpdates((updated) => {
+      setCurrentMember(updated);
+    });
+    return unsubscribe;
   }, []);
 
   const toggleDarkMode = () => {
@@ -206,21 +210,21 @@ export function CommunityHeader({
   };
 
   const switchAccount = (member: Member) => {
-    setCurrentMember(member);
-    localStorage.setItem("school_active_member_id", member.id);
+    saveActiveMember(member);
+    setCurrentMember(getActiveMember());
     setShowMemberMenu(false);
   };
 
   const handleUpdateProfile = (updated: Partial<Member>) => {
     const updatedMember = { ...currentMember, ...updated };
+    saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
-    localStorage.setItem("school_active_member_id", updatedMember.id);
   };
 
   const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
     const updatedMember = { ...currentMember, plan_tier: newTier };
+    saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
-    localStorage.setItem("school_active_member_id", updatedMember.id);
   };
 
   const isOwnerOrAdmin = currentMember.role === "owner" || currentMember.role === "admin";

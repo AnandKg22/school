@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, ZoomIn, ZoomOut, RotateCw, Check, Move } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCw, Check, Move, RefreshCw } from "lucide-react";
 
 interface ImageCropperModalProps {
   imageSrc: string | null;
@@ -20,10 +20,24 @@ export function ImageCropperModal({
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+
+  // Use ref for drag tracking to eliminate state lag and dropped moves
+  const dragTracker = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  }>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    origX: 0,
+    origY: 0,
+  });
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -36,15 +50,15 @@ export function ImageCropperModal({
     const size = canvas.width; // 360px
     ctx.clearRect(0, 0, size, size);
 
-    // Save context
+    // Save state
     ctx.save();
 
-    // Move to center
+    // Center and apply position offset, rotation, and scale
     ctx.translate(size / 2 + position.x, size / 2 + position.y);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(scale, scale);
 
-    // Calculate dimensions to fit inside 360x360 while maintaining aspect ratio
+    // Fit image inside 360x360 while preserving natural aspect ratio
     const imgAspect = img.width / img.height;
     let drawW = size;
     let drawH = size;
@@ -60,7 +74,7 @@ export function ImageCropperModal({
     ctx.restore();
   }, [position, rotation, scale]);
 
-  // Reset transforms when a new image is loaded
+  // Load new image source
   useEffect(() => {
     if (imageSrc && isOpen) {
       setScale(1);
@@ -77,35 +91,61 @@ export function ImageCropperModal({
     }
   }, [imageSrc, isOpen, draw]);
 
+  // Redraw when transform parameters change
   useEffect(() => {
     draw();
   }, [draw]);
 
-  // Handle Dragging
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // --- Pointer Event Handlers for Fluid Dragging & Centering ---
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
     setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    dragTracker.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: position.x,
+      origY: position.y,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragTracker.current.active) return;
+    const dx = e.clientX - dragTracker.current.startX;
+    const dy = e.clientY - dragTracker.current.startY;
     setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
+      x: Math.round(dragTracker.current.origX + dx),
+      y: Math.round(dragTracker.current.origY + dy),
     });
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragTracker.current.active = false;
     setIsDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY * -0.0015;
-    setScale((prev) => Math.min(Math.max(0.8, prev + delta), 3.5));
+  // Zoom Helpers
+  const handleZoomIn = () => {
+    setScale((s) => Math.min(3.5, Number((s + 0.15).toFixed(2))));
   };
 
-  // Perform Final Crop to high-resolution square/circle
+  const handleZoomOut = () => {
+    setScale((s) => Math.max(0.5, Number((s - 0.15).toFixed(2))));
+  };
+
+  const handleResetCenter = () => {
+    setPosition({ x: 0, y: 0 });
+    setScale(1);
+    setRotation(0);
+  };
+
+  // Perform Final Crop
   const handleApplyCrop = () => {
     const img = imageRef.current;
     if (!img) return;
@@ -117,12 +157,11 @@ export function ImageCropperModal({
     const ctx = outputCanvas.getContext("2d");
     if (!ctx) return;
 
-    // Draw background
+    // Fill white background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, outputSize, outputSize);
 
     ctx.save();
-    // Center & transform
     const factor = outputSize / 360;
     ctx.translate(outputSize / 2 + position.x * factor, outputSize / 2 + position.y * factor);
     ctx.rotate((rotation * Math.PI) / 180);
@@ -157,7 +196,7 @@ export function ImageCropperModal({
               Crop & Position Avatar
             </h3>
             <p className="text-[11px] text-[#64748B]">
-              Drag to reposition, use slider to zoom in or out
+              Drag image to center • Use + / - or slider to zoom
             </p>
           </div>
           <button
@@ -168,17 +207,18 @@ export function ImageCropperModal({
           </button>
         </div>
 
-        {/* Cropper Viewport */}
+        {/* Interactive Cropper Viewport */}
         <div className="p-6 flex flex-col items-center bg-slate-100 dark:bg-slate-950/80 select-none">
           <div
-            className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center cursor-move"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
+            className={`relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center touch-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
           >
-            {/* Underlying Canvas */}
+            {/* Canvas displaying transformed image */}
             <canvas
               ref={canvasRef}
               width={360}
@@ -186,11 +226,11 @@ export function ImageCropperModal({
               className="w-full h-full object-contain pointer-events-none"
             />
 
-            {/* Circular Mask Overlay */}
+            {/* Circular Crop Guide Mask */}
             <div className="absolute inset-0 pointer-events-none">
               <svg className="w-full h-full" viewBox="0 0 360 360">
                 <defs>
-                  <mask id="crop-circle-mask">
+                  <mask id="crop-circle-mask-v2">
                     <rect width="360" height="360" fill="white" />
                     <circle cx="180" cy="180" r="140" fill="black" />
                   </mask>
@@ -199,7 +239,7 @@ export function ImageCropperModal({
                   width="360"
                   height="360"
                   fill="rgba(15, 23, 42, 0.65)"
-                  mask="url(#crop-circle-mask)"
+                  mask="url(#crop-circle-mask-v2)"
                 />
                 <circle
                   cx="180"
@@ -213,57 +253,100 @@ export function ImageCropperModal({
               </svg>
             </div>
 
-            {/* Drag helper hint */}
-            <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/60 text-white text-[10px] flex items-center gap-1 pointer-events-none">
+            {/* Position & Drag Pill */}
+            <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/70 text-white text-[10px] flex items-center gap-1.5 pointer-events-none font-medium backdrop-blur-xs">
               <Move className="w-3 h-3 text-blue-400" />
-              <span>Drag to center</span>
+              <span>
+                {isDragging ? "Dragging..." : "Drag to center"} (X:{position.x}, Y:{position.y})
+              </span>
             </div>
           </div>
         </div>
 
         {/* Controls */}
         <div className="p-5 border-t border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
-          {/* Zoom Slider */}
-          <div className="flex items-center gap-3">
-            <ZoomOut className="w-4 h-4 text-slate-400 shrink-0" />
-            <input
-              type="range"
-              min="0.8"
-              max="3"
-              step="0.05"
-              value={scale}
-              onChange={(e) => setScale(parseFloat(e.target.value))}
-              className="flex-1 accent-blue-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
-            />
-            <ZoomIn className="w-4 h-4 text-slate-400 shrink-0" />
-            <span className="text-[11px] font-mono text-slate-500 w-10 text-right">
-              {Math.round(scale * 100)}%
-            </span>
+          {/* Zoom In & Zoom Out Controls */}
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-[#0F172A] dark:text-slate-200 mb-1.5">
+              <span>Zoom Level</span>
+              <span className="font-mono text-blue-600 dark:text-blue-400">
+                {Math.round(scale * 100)}%
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Zoom Out Button */}
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                disabled={scale <= 0.5}
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-[#E2E8F0] dark:border-slate-700 disabled:opacity-40 transition-colors"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+
+              {/* Zoom Range Slider */}
+              <input
+                type="range"
+                min="0.5"
+                max="3.5"
+                step="0.05"
+                value={scale}
+                onChange={(e) => setScale(parseFloat(e.target.value))}
+                className="flex-1 accent-blue-600 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+              />
+
+              {/* Zoom In Button */}
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={scale >= 3.5}
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-[#E2E8F0] dark:border-slate-700 disabled:opacity-40 transition-colors"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* Action Tools & Buttons */}
-          <div className="flex items-center justify-between pt-1">
-            <button
-              type="button"
-              onClick={() => setRotation((r) => (r + 90) % 360)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 transition-colors"
-            >
-              <RotateCw className="w-3.5 h-3.5 text-blue-600" />
-              <span>Rotate</span>
-            </button>
+          {/* Quick Preset Buttons: Center, Rotate, Presets */}
+          <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleResetCenter}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 transition-colors"
+                title="Reset position to center"
+              >
+                <RefreshCw className="w-3 h-3 text-blue-600" />
+                <span>Reset Center</span>
+              </button>
 
+              <button
+                type="button"
+                onClick={() => setRotation((r) => (r + 90) % 360)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 transition-colors"
+                title="Rotate 90 degrees"
+              >
+                <RotateCw className="w-3 h-3 text-blue-600" />
+                <span>Rotate 90°</span>
+              </button>
+            </div>
+
+            {/* Save & Cancel */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                className="px-3.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleApplyCrop}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all"
+                className="flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all"
               >
                 <Check className="w-4 h-4" />
                 <span>Apply Crop</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { User, Check, X, Camera, Eye, Lock, Flame, Calendar, Award, Globe, Users } from "lucide-react";
 import { Member } from "@/lib/types";
 import { ImageCropperModal } from "./ImageCropperModal";
@@ -25,6 +25,16 @@ export function ProfileModal({
   const [avatarUrl, setAvatarUrl] = useState(member.avatar_url);
   const [isPublic, setIsPublic] = useState(true);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Keep internal form state synchronized with member prop
+  useEffect(() => {
+    if (member) {
+      setFullName(member.full_name);
+      setHandle(member.handle);
+      setBio(member.bio || "");
+      setAvatarUrl(member.avatar_url);
+    }
+  }, [member, isOpen]);
 
   // Image upload & crop state
   const fileInputRef = useRef<HTMLInputElement | null>(null);

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { MOCK_POSTS, MOCK_SPACES, MOCK_MEMBERS, MOCK_COMMUNITY } from "@/lib/school-mock";
 import { Post, Member, Space } from "@/lib/types";
+import { getActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
@@ -51,11 +52,11 @@ export default function CommunityPage() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("school_active_member_id");
-    if (saved) {
-      const found = MOCK_MEMBERS.find((m) => m.id === saved);
-      if (found) setCurrentMember(found);
-    }
+    setCurrentMember(getActiveMember());
+    const unsubscribe = subscribeToMemberUpdates((updated) => {
+      setCurrentMember(updated);
+    });
+    return unsubscribe;
   }, []);
 
   const handleReportPost = (postId: string) => {

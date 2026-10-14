@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { MOCK_COURSES, MOCK_MEMBERS } from "@/lib/school-mock";
 import { CourseLesson, CourseModule, Member } from "@/lib/types";
+import { getActiveMember, saveActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 
 export default function ClassroomPage() {
   const [activeCourse, setActiveCourse] = useState(MOCK_COURSES[0]);
@@ -40,17 +41,17 @@ export default function ClassroomPage() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem("school_active_member_id");
-    if (saved) {
-      const found = MOCK_MEMBERS.find((m) => m.id === saved);
-      if (found) setCurrentMember(found);
-    }
+    setCurrentMember(getActiveMember());
+    const unsubscribe = subscribeToMemberUpdates((updated) => {
+      setCurrentMember(updated);
+    });
+    return unsubscribe;
   }, []);
 
   const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
     const updated = { ...currentMember, plan_tier: newTier };
+    saveActiveMember(updated);
     setCurrentMember(updated);
-    localStorage.setItem("school_active_member_id", updated.id);
   };
 
   const toggleLessonCompletion = (lessonId: string) => {
