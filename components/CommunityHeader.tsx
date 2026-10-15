@@ -243,10 +243,28 @@ export function CommunityHeader({
     }
   };
 
-  const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
+  const handleUpdateTier = async (newTier: "free" | "pro" | "vip") => {
     const updatedMember = { ...currentMember, plan_tier: newTier };
     saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch("/api/v1/billing/upgrade", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ planTier: newTier }),
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync tier upgrade to server, persisted locally:", err);
+    }
   };
 
   const isOwnerOrAdmin = currentMember.role === "owner" || currentMember.role === "admin";
