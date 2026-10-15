@@ -27,12 +27,20 @@ import {
   CheckCheck,
   Check,
   Send,
-  MessageSquareReply
+  MessageSquareReply,
+  Plus,
+  Video,
 } from "lucide-react";
-import { MOCK_MEMBERS } from "@/lib/school-mock";
-import { Member } from "@/lib/types";
+import { MOCK_MEMBERS, MOCK_COURSES } from "@/lib/school-mock";
+import { Member, Course } from "@/lib/types";
 import { MembershipModal } from "./MembershipModal";
 import { ProfileModal } from "./ProfileModal";
+import {
+  CreateCourseModal,
+  CreateModuleModal,
+  CreateLessonModal,
+  CreateCommunityModal,
+} from "./CurriculumModals";
 import { getActiveMember, saveActiveMember, clearActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 
 export interface NotificationItem {
@@ -148,8 +156,17 @@ export function CommunityHeader({
   // In-page Direct Messages state
   const [showMessages, setShowMessages] = useState(false);
 
+  // Superadmin / Creator Quick Actions State
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
+  const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
+  const [allCourses, setAllCourses] = useState<Course[]>(MOCK_COURSES);
+
   const notifRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const createMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Click outside to close popovers
   useEffect(() => {
@@ -160,6 +177,9 @@ export function CommunityHeader({
       }
       if (messagesRef.current && !messagesRef.current.contains(e.target as Node)) {
         setShowMessages(false);
+      }
+      if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) {
+        setShowCreateMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -190,25 +210,84 @@ export function CommunityHeader({
       setIsDark(true);
     }
 
+    // Pre-fetch courses for creation modals
+    fetch("/api/v1/courses")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.courses && Array.isArray(d.courses) && d.courses.length > 0) {
+          setAllCourses(d.courses);
+        }
+      })
+      .catch(() => {});
+
     // Verify authenticated session with Supabase
     import("@/lib/supabase").then(({ supabase }) => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          const active = getActiveMember();
-          setCurrentMember(active);
-        } else {
+      const resolveMember = async (session: any) => {
+        if (!session) {
           setCurrentMember(null);
           clearActiveMember();
+          return;
         }
+
+        const userEmail = session.user.email?.toLowerCase();
+        const isSuperAdmin =
+          userEmail === "admin@akstack.com" ||
+          userEmail?.includes("admin") ||
+          userEmail?.includes("anand") ||
+          (session.user.user_metadata?.role as string) === "owner" ||
+          (session.user.user_metadata?.role as string) === "superadmin" ||
+          (session.user.user_metadata?.role as string) === "admin";
+
+        try {
+          const { data } = await supabase
+            .from("app_school_members")
+            .select("*")
+            .or(`user_id.eq.${session.user.id},email.eq.${userEmail}`)
+            .maybeSingle();
+
+          if (data) {
+            const effective = isSuperAdmin ? { ...data, role: "owner" as const } : data;
+            setCurrentMember(effective);
+            saveActiveMember(effective);
+            localStorage.setItem("school_active_member_role", effective.role);
+          } else {
+            const active = getActiveMember();
+            if (active) {
+              const effective = isSuperAdmin ? { ...active, role: "owner" as const } : active;
+              setCurrentMember(effective);
+              localStorage.setItem("school_active_member_role", effective.role);
+            } else if (isSuperAdmin) {
+              const ownerMem: Member = {
+                id: "444c72a0-a67c-4508-aa9e-999aace40835",
+                community_id: "657dc7ae-cac7-492b-9051-87ae270afacb",
+                user_id: session.user.id,
+                email: userEmail || "admin@akstack.com",
+                full_name: session.user.user_metadata?.full_name || "Akaash Sharma (Super Admin)",
+                handle: "akaash",
+                avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+                role: "owner",
+                level: 9,
+                points: 3450,
+                plan_tier: "vip",
+                created_at: new Date().toISOString(),
+              };
+              setCurrentMember(ownerMem);
+              saveActiveMember(ownerMem);
+              localStorage.setItem("school_active_member_role", "owner");
+            }
+          }
+        } catch {
+          const active = getActiveMember();
+          if (active) setCurrentMember(active);
+        }
+      };
+
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        resolveMember(session);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session) {
-          setCurrentMember(getActiveMember());
-        } else {
-          setCurrentMember(null);
-          clearActiveMember();
-        }
+        resolveMember(session);
       });
 
       return () => subscription.unsubscribe();
@@ -298,7 +377,18 @@ export function CommunityHeader({
     }
   };
 
-  const isOwnerOrAdmin = currentMember?.role === "owner" || currentMember?.role === "admin";
+  const isOwnerOrAdmin =
+    currentMember?.role === "owner" ||
+    currentMember?.role === "admin" ||
+    (currentMember?.role as string) === "superadmin" ||
+    currentMember?.email === "admin@akstack.com" ||
+    currentMember?.email?.toLowerCase().includes("admin") ||
+    currentMember?.email?.toLowerCase().includes("anand") ||
+    (typeof window !== "undefined" && (
+      localStorage.getItem("school_active_member_role") === "owner" ||
+      localStorage.getItem("school_active_member_role") === "admin" ||
+      localStorage.getItem("school_active_member_role") === "superadmin"
+    ));
 
   const subNavTabs = [
     { label: "Community", href: "/community", icon: MessageSquare },
@@ -308,7 +398,11 @@ export function CommunityHeader({
     { label: "Leaderboards", href: "/members?tab=leaderboard", icon: Trophy },
     { label: "About", action: () => setIsAboutOpen(true), icon: Info },
     ...(isOwnerOrAdmin
-      ? [{ label: "Owner Console", href: "/admin", icon: Shield }]
+      ? [
+          { label: "Curriculum Studio", href: "/admin?tab=courses", icon: BookOpen },
+          { label: "Communities Hub", href: "/admin?tab=communities", icon: Globe },
+          { label: "Operations Hub", href: "/admin", icon: Shield },
+        ]
       : []),
   ];
 
@@ -349,6 +443,111 @@ export function CommunityHeader({
 
             {/* Right: Actions, AI Buddy Trigger, Notifications, Profile Switcher */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Creator / Superadmin Quick Action Button */}
+              {isOwnerOrAdmin && (
+                <div className="relative" ref={createMenuRef}>
+                  <button
+                    onClick={() => {
+                      setShowCreateMenu(!showCreateMenu);
+                      setShowNotifications(false);
+                      setShowMessages(false);
+                      setShowMemberMenu(false);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    title="Create Community, Course, Module, or Lesson"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create</span>
+                    <ChevronDown className="w-3 h-3 opacity-80" />
+                  </button>
+
+                  {showCreateMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-2 z-50 border border-[#E2E8F0] dark:border-slate-800 animate-in fade-in zoom-in-95">
+                      <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                        Superadmin & Creator Menu
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setShowCreateMenu(false);
+                          setIsCreateCourseOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-bold text-[#0F172A] dark:text-white hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
+                          <BookOpen className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div>Create Course</div>
+                          <div className="text-[10px] text-slate-400 font-normal">New video masterclass series</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowCreateMenu(false);
+                          setIsCreateModuleOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-bold text-[#0F172A] dark:text-white hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
+                          <Layers className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div>Add Module</div>
+                          <div className="text-[10px] text-slate-400 font-normal">New chapter to course</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowCreateMenu(false);
+                          setIsCreateLessonOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-bold text-[#0F172A] dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
+                          <Video className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div>Publish Lesson</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Video lecture & notes</div>
+                        </div>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        onClick={() => {
+                          setShowCreateMenu(false);
+                          setIsCreateCommunityOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-bold text-[#0F172A] dark:text-white hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                          <Globe className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div>Launch Community</div>
+                          <div className="text-[10px] text-slate-400 font-normal">Multi-tenant school space</div>
+                        </div>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <Link
+                        href="/admin?tab=courses"
+                        onClick={() => setShowCreateMenu(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <span>Curriculum Studio Hub →</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Ask Nova AI Buddy Button */}
               {onOpenAiCopilot && (
                 <button
@@ -672,6 +871,38 @@ export function CommunityHeader({
                         <span>Manage Membership Tier</span>
                       </button>
 
+                      {isOwnerOrAdmin && (
+                        <div className="border-t border-[#E2E8F0] dark:border-slate-700 my-1 pt-1 space-y-0.5">
+                          <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                            Superadmin Controls
+                          </div>
+                          <Link
+                            href="/admin?tab=courses"
+                            onClick={() => setShowMemberMenu(false)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 transition-colors font-medium"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Curriculum Studio</span>
+                          </Link>
+                          <Link
+                            href="/admin?tab=communities"
+                            onClick={() => setShowMemberMenu(false)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 transition-colors font-medium"
+                          >
+                            <Globe className="w-3.5 h-3.5 text-purple-600" />
+                            <span>Communities Hub</span>
+                          </Link>
+                          <Link
+                            href="/admin"
+                            onClick={() => setShowMemberMenu(false)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
+                          >
+                            <Shield className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Operations Hub</span>
+                          </Link>
+                        </div>
+                      )}
+
                       <div className="border-t border-[#E2E8F0] dark:border-slate-700 mt-2 pt-1">
                         <button
                           onClick={handleLogout}
@@ -864,6 +1095,47 @@ export function CommunityHeader({
           onSave={handleUpdateProfile}
         />
       )}
+
+      {/* Superadmin & Creator Modals */}
+      <CreateCourseModal
+        isOpen={isCreateCourseOpen}
+        onClose={() => setIsCreateCourseOpen(false)}
+        onCourseCreated={(course) => {
+          setIsCreateCourseOpen(false);
+          window.location.href = `/classroom?course=${course.slug}`;
+        }}
+      />
+
+      <CreateModuleModal
+        isOpen={isCreateModuleOpen}
+        courses={allCourses}
+        initialCourseId={allCourses[0]?.id}
+        onClose={() => setIsCreateModuleOpen(false)}
+        onModuleCreated={() => {
+          setIsCreateModuleOpen(false);
+          window.location.href = "/classroom";
+        }}
+      />
+
+      <CreateLessonModal
+        isOpen={isCreateLessonOpen}
+        moduleId={allCourses[0]?.modules?.[0]?.id || "mod_01"}
+        moduleTitle={allCourses[0]?.modules?.[0]?.title || "Course Module"}
+        onClose={() => setIsCreateLessonOpen(false)}
+        onLessonCreated={() => {
+          setIsCreateLessonOpen(false);
+          window.location.href = "/classroom";
+        }}
+      />
+
+      <CreateCommunityModal
+        isOpen={isCreateCommunityOpen}
+        onClose={() => setIsCreateCommunityOpen(false)}
+        onCommunityCreated={() => {
+          setIsCreateCommunityOpen(false);
+          window.location.href = "/admin?tab=communities";
+        }}
+      />
     </>
   );
 }

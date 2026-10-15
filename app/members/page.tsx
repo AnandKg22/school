@@ -45,7 +45,7 @@ export default function MembersPage() {
     if (!matchesSearch) return false;
 
     if (activeTab === "team") {
-      return m.role === "owner" || m.role === "admin" || m.role === "moderator";
+      return m.role === "superadmin" || m.role === "owner" || m.role === "admin" || m.role === "moderator";
     }
     return true;
   });
@@ -126,6 +126,7 @@ export default function MembersPage() {
         {/* Member Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedMembers.map((member, idx) => {
+            const isSuperAdmin = (member.role as string) === "superadmin";
             const isOwner = member.role === "owner";
             const isAdmin = member.role === "admin";
             const isMod = member.role === "moderator";
@@ -155,7 +156,9 @@ export default function MembersPage() {
                     <div className="flex flex-col items-end gap-1">
                       <span
                         className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
-                          isOwner
+                          isSuperAdmin
+                            ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                            : isOwner
                             ? "bg-blue-50 text-blue-700 border-blue-200"
                             : isAdmin
                             ? "bg-indigo-50 text-indigo-700 border-indigo-200"

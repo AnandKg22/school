@@ -1,4 +1,4 @@
-export type MemberRole = "owner" | "admin" | "moderator" | "member";
+export type MemberRole = "superadmin" | "owner" | "admin" | "moderator" | "member";
 export type PlanTier = "free" | "pro" | "vip";
 
 export interface Community {

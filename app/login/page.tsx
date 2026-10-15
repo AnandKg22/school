@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { ShieldCheck, Lock, ArrowRight, Layers, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { saveActiveMember } from "@/lib/member-storage";
+import { Member } from "@/lib/types";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,36 +41,74 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Fetch authenticated member profile from database
-      const { data: memberData, error: memberError } = await supabase
+      // 2. Fetch authenticated member profile from database by user_id OR email
+      const userEmail = (authData.user.email || email).trim().toLowerCase();
+      const isSuperAdminEmail =
+        userEmail === "admin@akstack.com" ||
+        userEmail.includes("admin") ||
+        userEmail.includes("anand") ||
+        (authData.user.user_metadata?.role as string) === "owner" ||
+        (authData.user.user_metadata?.role as string) === "superadmin" ||
+        (authData.user.user_metadata?.role as string) === "admin";
+
+      const { data: memberData } = await supabase
         .from("app_school_members")
         .select("*")
-        .eq("user_id", authData.user.id)
-        .single();
+        .or(`user_id.eq.${authData.user.id},email.eq.${userEmail}`)
+        .maybeSingle();
 
       if (memberData) {
-        saveActiveMember(memberData);
-        localStorage.setItem("school_active_member_id", memberData.id);
-        localStorage.setItem("school_active_member_role", memberData.role);
-      } else {
-        // Fallback profile if member row isn't synced yet
-        const defaultProfile = {
-          id: `mem_${authData.user.id.slice(0, 8)}`,
-          community_id: "comm_akstack_001",
+        const effectiveRole = isSuperAdminEmail ? "owner" : memberData.role;
+        const updated = {
+          ...memberData,
           user_id: authData.user.id,
-          email: authData.user.email || email,
-          full_name: authData.user.user_metadata?.full_name || "Builder Member",
-          handle: authData.user.email?.split("@")[0] || "builder",
+          role: effectiveRole,
+        };
+        // Update user_id or elevated role in database
+        if (memberData.user_id !== authData.user.id || (isSuperAdminEmail && memberData.role !== "owner")) {
+          await supabase
+            .from("app_school_members")
+            .update({ user_id: authData.user.id, role: effectiveRole })
+            .eq("id", memberData.id);
+        }
+        saveActiveMember(updated);
+        localStorage.setItem("school_active_member_id", updated.id);
+        localStorage.setItem("school_active_member_role", effectiveRole);
+      } else {
+        // Fallback profile if member row isn't in database yet
+        const effectiveRole = isSuperAdminEmail ? "owner" : ((authData.user.user_metadata?.role as any) || "member");
+        const defaultProfile: Member = {
+          id: `mem_${authData.user.id.slice(0, 8)}`,
+          community_id: "657dc7ae-cac7-492b-9051-87ae270afacb",
+          user_id: authData.user.id,
+          email: userEmail,
+          full_name: authData.user.user_metadata?.full_name || (isSuperAdminEmail ? "Akaash Sharma (Super Admin)" : "Builder Member"),
+          handle: userEmail.split("@")[0] || "builder",
           avatar_url: authData.user.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-          role: (authData.user.user_metadata?.role as any) || "member",
-          level: 1,
-          points: 100,
-          plan_tier: "free" as const,
+          role: effectiveRole,
+          level: isSuperAdminEmail ? 9 : 1,
+          points: isSuperAdminEmail ? 3450 : 100,
+          plan_tier: isSuperAdminEmail ? "vip" : "free",
           created_at: new Date().toISOString()
         };
+
+        await supabase.from("app_school_members").insert({
+          id: defaultProfile.id,
+          community_id: defaultProfile.community_id,
+          user_id: defaultProfile.user_id,
+          email: defaultProfile.email,
+          full_name: defaultProfile.full_name,
+          handle: defaultProfile.handle,
+          avatar_url: defaultProfile.avatar_url,
+          role: defaultProfile.role,
+          level: defaultProfile.level,
+          points: defaultProfile.points,
+          plan_tier: defaultProfile.plan_tier,
+        });
+
         saveActiveMember(defaultProfile);
         localStorage.setItem("school_active_member_id", defaultProfile.id);
-        localStorage.setItem("school_active_member_role", defaultProfile.role);
+        localStorage.setItem("school_active_member_role", effectiveRole);
       }
 
       router.push("/community");

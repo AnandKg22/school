@@ -25,7 +25,11 @@ import {
   ExternalLink,
   Settings,
   Zap,
-  ThumbsUp
+  ThumbsUp,
+  Shield,
+  Globe,
+  Layers,
+  Plus,
 } from "lucide-react";
 import { MOCK_POSTS, MOCK_SPACES, MOCK_MEMBERS, MOCK_COMMUNITY } from "@/lib/school-mock";
 import { Post, Member, Space } from "@/lib/types";
@@ -38,6 +42,19 @@ export default function CommunityPage() {
   const [reportToast, setReportToast] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
+
+  const isOwnerOrAdmin =
+    currentMember?.role === "owner" ||
+    currentMember?.role === "admin" ||
+    (currentMember?.role as string) === "superadmin" ||
+    currentMember?.email === "admin@akstack.com" ||
+    currentMember?.email?.toLowerCase().includes("admin") ||
+    currentMember?.email?.toLowerCase().includes("anand") ||
+    (typeof window !== "undefined" && (
+      localStorage.getItem("school_active_member_role") === "owner" ||
+      localStorage.getItem("school_active_member_role") === "admin" ||
+      localStorage.getItem("school_active_member_role") === "superadmin"
+    ));
 
   // Composer state
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -644,6 +661,62 @@ export default function CommunityPage() {
 
           {/* Right Column: Skool Style Community Card (Matches Skool Screenshot 4) */}
           <div className="lg:col-span-4 space-y-4">
+            {/* Superadmin Quick Studio Card */}
+            {isOwnerOrAdmin && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-blue-500/30 dark:border-blue-700/50 p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 text-white flex items-center justify-center font-bold shadow-xs">
+                      <Shield className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-[#0F172A] dark:text-white uppercase tracking-wider">
+                        Creator & Admin Studio
+                      </h4>
+                      <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Superadmin Operations</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                    Active
+                  </span>
+                </div>
+
+                <p className="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                  Quick links to create courses, chapter modules, video lectures, and launch new community spaces.
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Link
+                    href="/admin?tab=courses"
+                    className="flex items-center gap-1.5 p-2.5 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors border border-blue-200 dark:border-blue-900"
+                  >
+                    <BookOpen className="w-4 h-4 text-blue-600" />
+                    <span>Create Course</span>
+                  </Link>
+                  <Link
+                    href="/admin?tab=communities"
+                    className="flex items-center gap-1.5 p-2.5 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors border border-purple-200 dark:border-purple-900"
+                  >
+                    <Globe className="w-4 h-4 text-purple-600" />
+                    <span>New Community</span>
+                  </Link>
+                  <Link
+                    href="/classroom"
+                    className="flex items-center gap-1.5 p-2.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors border border-emerald-200 dark:border-emerald-900"
+                  >
+                    <Layers className="w-4 h-4 text-emerald-600" />
+                    <span>Add Modules</span>
+                  </Link>
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-1.5 p-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors border border-slate-200 dark:border-slate-700"
+                  >
+                    <Shield className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                    <span>Operations Hub</span>
+                  </Link>
+                </div>
+              </div>
+            )}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden shadow-2xs">
               {/* Banner Graphic */}
               <div className="relative h-36 bg-gradient-to-r from-blue-600 to-emerald-500 flex items-center justify-center p-4 text-white">
