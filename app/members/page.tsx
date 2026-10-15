@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CommunityHeader } from "@/components/CommunityHeader";
 import { AiCopilotModal } from "@/components/AiCopilotModal";
 import { ProfileModal } from "@/components/ProfileModal";
@@ -26,7 +26,7 @@ export default function MembersPage() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     fetch("/api/v1/members")
       .then((res) => res.json())
       .then((data) => {
@@ -35,7 +35,7 @@ export default function MembersPage() {
         }
       })
       .catch((err) => console.warn("Failed to load live members list:", err));
-  });
+  }, []);
 
   const filteredMembers = members.filter((m) => {
     const matchesSearch =

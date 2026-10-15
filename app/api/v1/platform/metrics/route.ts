@@ -16,23 +16,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid session." }, { status: 401 });
     }
 
-    // Verify Super Admin status (email matches or user_metadata.role == 'superadmin' / 'owner')
+    // Strictly verify Platform Super Admin status
+    // Only trust server-controlled app_metadata or official platform admin email
+    // NEVER trust client-editable user_metadata or community-scoped owner roles
     const isSuperAdmin = 
       user.email === "admin@akstack.com" || 
-      user.user_metadata?.role === "superadmin" ||
-      user.user_metadata?.role === "owner";
+      user.app_metadata?.role === "superadmin" ||
+      user.app_metadata?.claims_admin === true;
 
     if (!isSuperAdmin) {
-      // Check member role
-      const { data: member } = await client
-        .from("app_school_members")
-        .select("role")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!member || member.role !== "owner") {
-        return NextResponse.json({ error: "Forbidden: Super Admin access required." }, { status: 403 });
-      }
+      return NextResponse.json(
+        { error: "Forbidden: Platform Super Admin credentials required." },
+        { status: 403 }
+      );
     }
 
     // Run platform aggregates

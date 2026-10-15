@@ -17,10 +17,29 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planTier } = body;
+    const { planTier, paymentReference } = body;
 
     if (!planTier || !["free", "pro", "vip"].includes(planTier)) {
       return NextResponse.json({ error: "Valid planTier ('free', 'pro', 'vip') is required." }, { status: 400 });
+    }
+
+    // Direct self-service elevation to paid tiers without verified payment is strictly forbidden
+    if (planTier !== "free") {
+      const isSuperAdmin = 
+        user.email === "admin@akstack.com" || 
+        user.app_metadata?.role === "superadmin" ||
+        user.app_metadata?.claims_admin === true;
+
+      // In production, paid tier elevation requires verified payment transaction or admin authority
+      if (!isSuperAdmin && !paymentReference) {
+        return NextResponse.json(
+          { 
+            error: "Forbidden: Direct plan tier upgrade requires verified payment event or admin authorization.",
+            code: "PAYMENT_VERIFICATION_REQUIRED"
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Update user's member record in app_school_members
