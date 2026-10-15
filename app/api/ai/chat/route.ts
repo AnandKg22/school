@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createAuthenticatedServerClient } from "@/lib/supabase";
 
 const DEFAULT_MIMO_URL = process.env.MIMO_API_BASE_URL 
   ? `${process.env.MIMO_API_BASE_URL.replace(/\/+$/, "")}/chat/completions`
@@ -45,33 +45,37 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.MIMO_API_KEY;
     const model = process.env.MIMO_DEFAULT_MODEL || "mimo-v2.6-flash";
 
-    // 1. Dynamic Grounding: Fetch real community knowledge from Supabase
+    // Extract user's Bearer token from incoming request
+    const authHeader = req.headers.get("authorization");
+    const userClient = createAuthenticatedServerClient(authHeader);
+
+    // 1. Dynamic Grounding: Fetch real community knowledge from Supabase using user context
     let knowledgeSnippets = "";
     let courseSnippets = "";
     let postSnippets = "";
 
     try {
       const [knowledgeRes, coursesRes, postsRes] = await Promise.all([
-        supabase.from("app_school_ai_knowledge").select("title, content, source_type").limit(6),
-        supabase.from("app_school_courses").select("title, description, required_tier").limit(4),
-        supabase.from("app_school_posts").select("title, content").order("created_at", { ascending: false }).limit(3)
+        userClient.from("app_school_ai_knowledge").select("title, content, source_type").limit(6),
+        userClient.from("app_school_courses").select("title, description, required_tier").limit(4),
+        userClient.from("app_school_posts").select("title, content").order("created_at", { ascending: false }).limit(3)
       ]);
 
       if (knowledgeRes.data && knowledgeRes.data.length > 0) {
         knowledgeSnippets = knowledgeRes.data
-          .map((k) => `[Source: ${k.title} (${k.source_type})]: ${k.content}`)
+          .map((k: any) => `[Source: ${k.title} (${k.source_type})]: ${k.content}`)
           .join("\n\n");
       }
 
       if (coursesRes.data && coursesRes.data.length > 0) {
         courseSnippets = coursesRes.data
-          .map((c) => `[Course: ${c.title}]: ${c.description} (Access Tier: ${c.required_tier})`)
+          .map((c: any) => `[Course: ${c.title}]: ${c.description} (Access Tier: ${c.required_tier})`)
           .join("\n\n");
       }
 
       if (postsRes.data && postsRes.data.length > 0) {
         postSnippets = postsRes.data
-          .map((p) => `[Discussion: "${p.title}"]: ${p.content?.slice(0, 300)}...`)
+          .map((p: any) => `[Discussion: "${p.title}"]: ${p.content?.slice(0, 300)}...`)
           .join("\n\n");
       }
     } catch (dbErr) {

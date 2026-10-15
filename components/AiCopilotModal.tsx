@@ -54,9 +54,18 @@ export function AiCopilotModal({ isOpen, onClose }: AiCopilotModalProps) {
     setIsLoading(true);
 
     try {
+      // Retrieve current session token from Supabase client
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ question: q }),
       });
 
