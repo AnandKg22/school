@@ -66,11 +66,39 @@ export default function AdminConsolePage() {
   const [allowedOrigins, setAllowedOrigins] = useState("https://akstack.com, https://preview.webflow.io");
 
   useEffect(() => {
+    // 1. Check local active member
     const saved = localStorage.getItem("school_active_member_id");
     if (saved) {
       const found = MOCK_MEMBERS.find((m) => m.id === saved);
       if (found) setCurrentMember(found);
     }
+
+    // 2. Verify real Supabase session and profile role
+    import("@/lib/supabase").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) {
+          // If no active session, redirect to login
+          window.location.href = "/login";
+          return;
+        }
+
+        // Check user role from metadata or app_school_members
+        supabase
+          .from("app_school_members")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setCurrentMember(data);
+              if (data.role !== "owner" && data.role !== "admin") {
+                // Not authorized to view admin operations
+                window.location.href = "/community";
+              }
+            }
+          });
+      });
+    });
   }, []);
 
   const handleSaveSettings = (e: React.FormEvent) => {
