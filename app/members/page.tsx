@@ -26,6 +26,17 @@ export default function MembersPage() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
+  useState(() => {
+    fetch("/api/v1/members")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.members && data.members.length > 0) {
+          setMembers(data.members);
+        }
+      })
+      .catch((err) => console.warn("Failed to load live members list:", err));
+  });
+
   const filteredMembers = members.filter((m) => {
     const matchesSearch =
       m.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||

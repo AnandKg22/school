@@ -215,10 +215,32 @@ export function CommunityHeader({
     setShowMemberMenu(false);
   };
 
-  const handleUpdateProfile = (updated: Partial<Member>) => {
+  const handleUpdateProfile = async (updated: Partial<Member>) => {
     const updatedMember = { ...currentMember, ...updated };
     saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch("/api/v1/me/profile", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            full_name: updated.full_name,
+            bio: updated.bio,
+            avatar_url: updated.avatar_url,
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync profile update to server, persisted locally:", err);
+    }
   };
 
   const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
