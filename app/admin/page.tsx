@@ -27,7 +27,7 @@ import { Member, AIKnowledgeItem } from "@/lib/types";
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<"overview" | "branding" | "moderation" | "ai" | "plans" | "embed">("overview");
   const [isAiOpen, setIsAiOpen] = useState(false);
-  const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
 
   // Settings State
   const [communityName, setCommunityName] = useState(MOCK_COMMUNITY.name);
@@ -234,7 +234,7 @@ export default function AdminConsolePage() {
                   Owner & Admin Console
                 </span>
                 <span className="text-xs text-slate-400">
-                  Role: <strong className="capitalize text-[#0F172A] dark:text-slate-300">{currentMember.role}</strong>
+                  Role: <strong className="capitalize text-[#0F172A] dark:text-slate-300">{currentMember?.role || "..."}</strong>
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] dark:text-white mt-0.5">

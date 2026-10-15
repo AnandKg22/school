@@ -33,7 +33,7 @@ import { MOCK_MEMBERS } from "@/lib/school-mock";
 import { Member } from "@/lib/types";
 import { MembershipModal } from "./MembershipModal";
 import { ProfileModal } from "./ProfileModal";
-import { getActiveMember, saveActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
+import { getActiveMember, saveActiveMember, clearActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 
 export interface NotificationItem {
   id: string;
@@ -132,7 +132,7 @@ export function CommunityHeader({
 }: CommunityHeaderProps) {
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(false);
-  const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [showMemberMenu, setShowMemberMenu] = useState(false);
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -189,8 +189,30 @@ export function CommunityHeader({
     if (typeof window !== "undefined" && document.documentElement.classList.contains("dark")) {
       setIsDark(true);
     }
-    // Load persisted member profile from localStorage
-    setCurrentMember(getActiveMember());
+
+    // Verify authenticated session with Supabase
+    import("@/lib/supabase").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          const active = getActiveMember();
+          setCurrentMember(active);
+        } else {
+          setCurrentMember(null);
+          clearActiveMember();
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          setCurrentMember(getActiveMember());
+        } else {
+          setCurrentMember(null);
+          clearActiveMember();
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    });
 
     // Listen to real-time profile updates across tabs/components
     const unsubscribe = subscribeToMemberUpdates((updated) => {
@@ -209,13 +231,21 @@ export function CommunityHeader({
     }
   };
 
-  const switchAccount = (member: Member) => {
-    saveActiveMember(member);
-    setCurrentMember(getActiveMember());
+  const handleLogout = async () => {
     setShowMemberMenu(false);
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("Sign out exception:", err);
+    }
+    clearActiveMember();
+    setCurrentMember(null);
+    window.location.href = "/login";
   };
 
   const handleUpdateProfile = async (updated: Partial<Member>) => {
+    if (!currentMember) return;
     const updatedMember = { ...currentMember, ...updated };
     saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
@@ -244,7 +274,8 @@ export function CommunityHeader({
   };
 
   const handleUpdateTier = async (newTier: "free" | "pro" | "vip") => {
-    const updatedMember = { ...currentMember, plan_tier: newTier };
+    if (!currentMember) return;
+    const updatedMember: Member = { ...currentMember, plan_tier: newTier };
     saveActiveMember(updatedMember);
     setCurrentMember(updatedMember);
 
@@ -267,7 +298,7 @@ export function CommunityHeader({
     }
   };
 
-  const isOwnerOrAdmin = currentMember.role === "owner" || currentMember.role === "admin";
+  const isOwnerOrAdmin = currentMember?.role === "owner" || currentMember?.role === "admin";
 
   const subNavTabs = [
     { label: "Community", href: "/community", icon: MessageSquare },
@@ -330,245 +361,250 @@ export function CommunityHeader({
                 </button>
               )}
 
-              {/* Direct Messages Icon & In-Page Dropdown */}
-              <div className="relative" ref={messagesRef}>
-                <button
-                  onClick={() => {
-                    setShowMessages(!showMessages);
-                    setShowNotifications(false);
-                    setShowMemberMenu(false);
-                  }}
-                  className="p-2 rounded-xl text-slate-500 hover:text-[#0F172A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
-                  title="Direct Messages"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
-                </button>
+              {/* Direct Messages & Notifications (Only for authenticated members) */}
+              {currentMember && (
+                <>
+                  {/* Direct Messages Icon & In-Page Dropdown */}
+                  <div className="relative" ref={messagesRef}>
+                    <button
+                      onClick={() => {
+                        setShowMessages(!showMessages);
+                        setShowNotifications(false);
+                        setShowMemberMenu(false);
+                      }}
+                      className="p-2 rounded-xl text-slate-500 hover:text-[#0F172A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+                      title="Direct Messages"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+                    </button>
 
-                {showMessages && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-[#E2E8F0] dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4 text-blue-600" />
-                        <span className="font-extrabold text-sm text-[#0F172A] dark:text-white">
-                          Direct Messages
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        3 Active
-                      </span>
-                    </div>
-
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
-                      {[
-                        {
-                          name: "Sarah Chen",
-                          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-                          time: "12m ago",
-                          preview: "Loved your zero-hallucination query router pattern! Are you open to a code review?",
-                          online: true,
-                        },
-                        {
-                          name: "Marcus Vance",
-                          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-                          time: "1h ago",
-                          preview: "The Docker compose config worked seamlessly in production.",
-                          online: true,
-                        },
-                        {
-                          name: "Nova AI (Study Buddy)",
-                          avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80",
-                          time: "2h ago",
-                          preview: "Ready to assist you with the Agentic AI Engineering curriculum whenever you need!",
-                          online: true,
-                        },
-                      ].map((dm, idx) => (
-                        <div
-                          key={idx}
-                          className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex items-start gap-3"
-                        >
-                          <div className="relative shrink-0">
-                            <img
-                              src={dm.avatar}
-                              alt={dm.name}
-                              className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
-                            />
-                            {dm.online && (
-                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
-                            )}
+                    {showMessages && (
+                      <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-[#E2E8F0] dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40">
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4 text-blue-600" />
+                            <span className="font-extrabold text-sm text-[#0F172A] dark:text-white">
+                              Direct Messages
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-[#0F172A] dark:text-white truncate">
-                                {dm.name}
-                              </span>
-                              <span className="text-[10px] text-slate-400">{dm.time}</span>
-                            </div>
-                            <p className="text-xs text-[#475569] dark:text-slate-400 truncate mt-0.5">
-                              {dm.preview}
-                            </p>
-                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            3 Active
+                          </span>
                         </div>
-                      ))}
-                    </div>
 
-                    <div className="p-3 border-t border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40 text-center">
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
-                        View All Messages in Hub →
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* In-Page Notification Dropdown Menu (Exact match to Skool Screenshot 4) */}
-              <div className="relative" ref={notifRef}>
-                <button
-                  onClick={() => {
-                    setShowNotifications(!showNotifications);
-                    setShowMessages(false);
-                    setShowMemberMenu(false);
-                  }}
-                  className="p-2 rounded-xl text-slate-500 hover:text-[#0F172A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
-                  title="Notifications"
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[18px] text-center shadow-xs animate-in zoom-in">
-                      99+
-                    </span>
-                  )}
-                </button>
-
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-[410px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-[#E2E8F0] dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40">
-                      <span className="font-extrabold text-sm text-[#0F172A] dark:text-white">
-                        Notifications
-                      </span>
-
-                      <div className="flex items-center gap-3">
-                        {unreadCount > 0 && (
-                          <button
-                            onClick={markAllAsRead}
-                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            Mark all as read
-                          </button>
-                        )}
-
-                        {/* Filter Popover Trigger */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setShowFilterMenu(!showFilterMenu)}
-                            className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors capitalize bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"
-                          >
-                            <span>{notifFilter}</span>
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-
-                          {showFilterMenu && (
-                            <div className="absolute right-0 mt-1 w-28 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-[#E2E8F0] dark:border-slate-700 py-1 z-50">
-                              {(["all", "unread", "mentions"] as const).map((mode) => (
-                                <button
-                                  key={mode}
-                                  onClick={() => {
-                                    setNotifFilter(mode);
-                                    setShowFilterMenu(false);
-                                  }}
-                                  className={`w-full text-left px-3 py-1.5 text-xs capitalize transition-colors ${
-                                    notifFilter === mode
-                                      ? "font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/40"
-                                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                                  }`}
-                                >
-                                  {mode}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Scrollable Notification List */}
-                    <div className="max-h-[440px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {filteredNotifications.length === 0 ? (
-                        <div className="py-12 px-4 text-center">
-                          <CheckCheck className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-60" />
-                          <p className="text-xs font-bold text-[#0F172A] dark:text-white">
-                            You&apos;re all caught up!
-                          </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            No notifications match your current filter.
-                          </p>
-                        </div>
-                      ) : (
-                        filteredNotifications.map((notif) => (
-                          <div
-                            key={notif.id}
-                            onClick={() => markAsRead(notif.id)}
-                            className={`p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex items-start gap-3 ${
-                              notif.isUnread ? "bg-blue-50/25 dark:bg-blue-950/20" : ""
-                            }`}
-                          >
-                            {/* Avatar with Community Globe Badge Overlay */}
-                            <div className="relative shrink-0">
-                              <img
-                                src={notif.senderAvatar}
-                                alt={notif.senderName}
-                                className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
-                              />
-                              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white dark:bg-slate-800 shadow-xs flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                                <Globe className="w-2.5 h-2.5 text-slate-600 dark:text-slate-300" />
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
+                          {[
+                            {
+                              name: "Sarah Chen",
+                              avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+                              time: "12m ago",
+                              preview: "Loved your zero-hallucination query router pattern! Are you open to a code review?",
+                              online: true,
+                            },
+                            {
+                              name: "Marcus Vance",
+                              avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+                              time: "1h ago",
+                              preview: "The Docker compose config worked seamlessly in production.",
+                              online: true,
+                            },
+                            {
+                              name: "Nova AI (Study Buddy)",
+                              avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80",
+                              time: "2h ago",
+                              preview: "Ready to assist you with the Agentic AI Engineering curriculum whenever you need!",
+                              online: true,
+                            },
+                          ].map((dm, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex items-start gap-3"
+                            >
+                              <div className="relative shrink-0">
+                                <img
+                                  src={dm.avatar}
+                                  alt={dm.name}
+                                  className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
+                                />
+                                {dm.online && (
+                                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-[#0F172A] dark:text-white truncate">
+                                    {dm.name}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">{dm.time}</span>
+                                </div>
+                                <p className="text-xs text-[#475569] dark:text-slate-400 truncate mt-0.5">
+                                  {dm.preview}
+                                </p>
                               </div>
                             </div>
+                          ))}
+                        </div>
 
-                            {/* Content Snippet */}
-                            <div className="flex-1 min-w-0 pr-1">
-                              <p className="text-xs text-[#0F172A] dark:text-slate-100 leading-snug">
-                                <span className="font-bold">{notif.senderName}</span>{" "}
-                                <span className="text-[#64748B] dark:text-slate-400 font-normal">
-                                  {notif.actionText}
-                                </span>
-                                <span className="text-[#94A3B8] font-normal text-[11px]">
-                                  {" "}
-                                  • {notif.timeAgo}
-                                </span>
+                        <div className="p-3 border-t border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40 text-center">
+                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                            View All Messages in Hub →
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* In-Page Notification Dropdown Menu */}
+                  <div className="relative" ref={notifRef}>
+                    <button
+                      onClick={() => {
+                        setShowNotifications(!showNotifications);
+                        setShowMessages(false);
+                        setShowMemberMenu(false);
+                      }}
+                      className="p-2 rounded-xl text-slate-500 hover:text-[#0F172A] dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+                      title="Notifications"
+                    >
+                      <Bell className="w-5 h-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-[18px] text-center shadow-xs animate-in zoom-in">
+                          99+
+                        </span>
+                      )}
+                    </button>
+
+                    {showNotifications && (
+                      <div className="absolute right-0 mt-2 w-80 sm:w-[410px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-[#E2E8F0] dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40">
+                          <span className="font-extrabold text-sm text-[#0F172A] dark:text-white">
+                            Notifications
+                          </span>
+
+                          <div className="flex items-center gap-3">
+                            {unreadCount > 0 && (
+                              <button
+                                onClick={markAllAsRead}
+                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Mark all as read
+                              </button>
+                            )}
+
+                            {/* Filter Popover Trigger */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                                className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors capitalize bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"
+                              >
+                                <span>{notifFilter}</span>
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
+
+                              {showFilterMenu && (
+                                <div className="absolute right-0 mt-1 w-28 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-[#E2E8F0] dark:border-slate-700 py-1 z-50">
+                                  {(["all", "unread", "mentions"] as const).map((mode) => (
+                                    <button
+                                      key={mode}
+                                      onClick={() => {
+                                        setNotifFilter(mode);
+                                        setShowFilterMenu(false);
+                                      }}
+                                      className={`w-full text-left px-3 py-1.5 text-xs capitalize transition-colors ${
+                                        notifFilter === mode
+                                          ? "font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/40"
+                                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                      }`}
+                                    >
+                                      {mode}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Scrollable Notification List */}
+                        <div className="max-h-[440px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                          {filteredNotifications.length === 0 ? (
+                            <div className="py-12 px-4 text-center">
+                              <CheckCheck className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-60" />
+                              <p className="text-xs font-bold text-[#0F172A] dark:text-white">
+                                You&apos;re all caught up!
                               </p>
-                              <p className="text-xs text-[#475569] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-normal">
-                                {notif.snippet}
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                No notifications match your current filter.
                               </p>
                             </div>
+                          ) : (
+                            filteredNotifications.map((notif) => (
+                              <div
+                                key={notif.id}
+                                onClick={() => markAsRead(notif.id)}
+                                className={`p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex items-start gap-3 ${
+                                  notif.isUnread ? "bg-blue-50/25 dark:bg-blue-950/20" : ""
+                                }`}
+                              >
+                                {/* Avatar with Community Globe Badge Overlay */}
+                                <div className="relative shrink-0">
+                                  <img
+                                    src={notif.senderAvatar}
+                                    alt={notif.senderName}
+                                    className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
+                                  />
+                                  <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white dark:bg-slate-800 shadow-xs flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                                    <Globe className="w-2.5 h-2.5 text-slate-600 dark:text-slate-300" />
+                                  </div>
+                                </div>
 
-                            {/* Unread Blue Dot Indicator */}
-                            {notif.isUnread && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] shrink-0 mt-2 shadow-xs ring-2 ring-blue-100 dark:ring-blue-950" />
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
+                                {/* Content Snippet */}
+                                <div className="flex-1 min-w-0 pr-1">
+                                  <p className="text-xs text-[#0F172A] dark:text-slate-100 leading-snug">
+                                    <span className="font-bold">{notif.senderName}</span>{" "}
+                                    <span className="text-[#64748B] dark:text-slate-400 font-normal">
+                                      {notif.actionText}
+                                    </span>
+                                    <span className="text-[#94A3B8] font-normal text-[11px]">
+                                      {" "}
+                                      • {notif.timeAgo}
+                                    </span>
+                                  </p>
+                                  <p className="text-xs text-[#475569] dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-normal">
+                                    {notif.snippet}
+                                  </p>
+                                </div>
 
-                    {/* Footer */}
-                    <div className="p-3 border-t border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40 flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium text-[11px]">
-                        {unreadCount} unread notification{unreadCount === 1 ? "" : "s"}
-                      </span>
-                      <button
-                        onClick={() => {
-                          markAllAsRead();
-                          setShowNotifications(false);
-                        }}
-                        className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-[11px]"
-                      >
-                        Dismiss All
-                      </button>
-                    </div>
+                                {/* Unread Blue Dot Indicator */}
+                                {notif.isUnread && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] shrink-0 mt-2 shadow-xs ring-2 ring-blue-100 dark:ring-blue-950" />
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-3 border-t border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40 flex items-center justify-between text-xs">
+                          <span className="text-slate-400 font-medium text-[11px]">
+                            {unreadCount} unread notification{unreadCount === 1 ? "" : "s"}
+                          </span>
+                          <button
+                            onClick={() => {
+                              markAllAsRead();
+                              setShowNotifications(false);
+                            }}
+                            className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-[11px]"
+                          >
+                            Dismiss All
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
 
               {/* Dark/Light Toggle */}
               <button
@@ -579,103 +615,91 @@ export function CommunityHeader({
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
-              {/* Member Profile Avatar & Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowMemberMenu(!showMemberMenu)}
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left"
-                >
-                  <div className="relative">
-                    <img
-                      src={currentMember.avatar_url}
-                      alt={currentMember.full_name}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-blue-600/30"
-                    />
-                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
-                      {currentMember.level}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:block" />
-                </button>
-
-                {/* Account Switcher & Profile Dropdown */}
-                {showMemberMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 z-50 border border-[#E2E8F0] dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3 py-2 border-b border-[#E2E8F0] dark:border-slate-700 mb-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Signed In As
-                      </p>
-                      <p className="text-xs font-bold text-[#0F172A] dark:text-white truncate">
-                        {currentMember.full_name}
-                      </p>
-                      <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
-                        Tier: {currentMember.plan_tier.toUpperCase()} • Level {currentMember.level}
-                      </p>
+              {/* Member Profile Avatar or Guest Sign In */}
+              {currentMember ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMemberMenu(!showMemberMenu)}
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-left"
+                  >
+                    <div className="relative">
+                      <img
+                        src={currentMember.avatar_url}
+                        alt={currentMember.full_name}
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-blue-600/30"
+                      />
+                      <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                        {currentMember.level}
+                      </span>
                     </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:block" />
+                  </button>
 
-                    <button
-                      onClick={() => {
-                        setShowMemberMenu(false);
-                        setIsProfileOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
-                    >
-                      <User className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Edit My Profile & Bio</span>
-                    </button>
+                  {/* Profile Dropdown */}
+                  {showMemberMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-2 z-50 border border-[#E2E8F0] dark:border-slate-700 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3 py-2 border-b border-[#E2E8F0] dark:border-slate-700 mb-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Signed In As
+                        </p>
+                        <p className="text-xs font-bold text-[#0F172A] dark:text-white truncate">
+                          {currentMember.full_name}
+                        </p>
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
+                          Tier: {currentMember.plan_tier.toUpperCase()} • Level {currentMember.level}
+                        </p>
+                      </div>
 
-                    <button
-                      onClick={() => {
-                        setShowMemberMenu(false);
-                        setIsMembershipOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
-                    >
-                      <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Manage Membership Tier</span>
-                    </button>
-
-                    <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-[#E2E8F0] dark:border-slate-700 mt-1">
-                      Switch Demo Account:
-                    </p>
-                    <div className="space-y-1">
-                      {MOCK_MEMBERS.map((m) => (
-                        <button
-                          key={m.id}
-                          onClick={() => switchAccount(m)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                            currentMember.id === m.id
-                              ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-bold"
-                              : "hover:bg-slate-100 dark:hover:bg-slate-700 text-[#475569] dark:text-slate-300"
-                          }`}
-                        >
-                          <img
-                            src={m.avatar_url}
-                            alt={m.full_name}
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                          <div className="flex-1 truncate">
-                            <div className="truncate">{m.full_name}</div>
-                            <div className="text-[10px] text-slate-400 capitalize">
-                              {m.role === "owner" ? "Super Admin" : m.role} • Lvl {m.level}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="border-t border-[#E2E8F0] dark:border-slate-700 mt-2 pt-1">
-                      <Link
-                        href="/login"
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors font-semibold"
+                      <button
+                        onClick={() => {
+                          setShowMemberMenu(false);
+                          setIsProfileOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Log Out</span>
-                      </Link>
+                        <User className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Edit My Profile & Bio</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowMemberMenu(false);
+                          setIsMembershipOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Manage Membership Tier</span>
+                      </button>
+
+                      <div className="border-t border-[#E2E8F0] dark:border-slate-700 mt-2 pt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors font-semibold"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Log Out</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 px-3 py-1.5 rounded-xl transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/login?tab=register"
+                    className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                  >
+                    <span>Join Community</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -822,20 +846,24 @@ export function CommunityHeader({
       )}
 
       {/* Membership & Plans Modal */}
-      <MembershipModal
-        isOpen={isMembershipOpen}
-        onClose={() => setIsMembershipOpen(false)}
-        currentMember={currentMember}
-        onUpdateTier={handleUpdateTier}
-      />
+      {currentMember && (
+        <MembershipModal
+          isOpen={isMembershipOpen}
+          onClose={() => setIsMembershipOpen(false)}
+          currentMember={currentMember}
+          onUpdateTier={handleUpdateTier}
+        />
+      )}
 
       {/* Profile Edit Modal */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        member={currentMember}
-        onSave={handleUpdateProfile}
-      />
+      {currentMember && (
+        <ProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          member={currentMember}
+          onSave={handleUpdateProfile}
+        />
+      )}
     </>
   );
 }

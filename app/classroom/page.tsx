@@ -35,7 +35,7 @@ export default function ClassroomPage() {
   );
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
-  const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({
     les_01: true,
   });
@@ -43,16 +43,48 @@ export default function ClassroomPage() {
   const [courses, setCourses] = useState(MOCK_COURSES);
 
   useEffect(() => {
-    setCurrentMember(getActiveMember());
+    let isMounted = true;
+
+    const checkSession = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+          if (session) {
+            setCurrentMember(getActiveMember());
+          } else {
+            setCurrentMember(null);
+          }
+        }
+      } catch {
+        if (isMounted) setCurrentMember(null);
+      }
+    };
+    checkSession();
+
     const unsubscribe = subscribeToMemberUpdates((updated) => {
-      setCurrentMember(updated);
+      if (isMounted) setCurrentMember(updated);
+    });
+
+    let authUnsub: (() => void) | undefined;
+    import("@/lib/supabase").then(({ supabase }) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (isMounted) {
+          if (session) {
+            setCurrentMember(getActiveMember());
+          } else {
+            setCurrentMember(null);
+          }
+        }
+      });
+      authUnsub = () => subscription.unsubscribe();
     });
 
     // 1. Fetch live courses from API
     fetch("/api/v1/courses")
       .then((res) => res.json())
       .then((data) => {
-        if (data.courses && data.courses.length > 0) {
+        if (isMounted && data.courses && data.courses.length > 0) {
           setCourses(data.courses);
           setActiveCourse(data.courses[0]);
           if (data.courses[0].modules?.[0]?.lessons?.[0]) {
@@ -65,13 +97,13 @@ export default function ClassroomPage() {
     // 2. Fetch authenticated user's completed lessons
     import("@/lib/supabase").then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.access_token) {
+        if (isMounted && session?.access_token) {
           fetch("/api/v1/learning/progress", {
             headers: { Authorization: `Bearer ${session.access_token}` },
           })
             .then((res) => res.json())
             .then((data) => {
-              if (data.completedLessons) {
+              if (isMounted && data.completedLessons) {
                 const map: Record<string, boolean> = {};
                 data.completedLessons.forEach((id: string) => {
                   map[id] = true;
@@ -84,10 +116,15 @@ export default function ClassroomPage() {
       });
     });
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+      if (authUnsub) authUnsub();
+    };
   }, []);
 
   const handleUpdateTier = (newTier: "free" | "pro" | "vip") => {
+    if (!currentMember) return;
     const updated = { ...currentMember, plan_tier: newTier };
     saveActiveMember(updated);
     setCurrentMember(updated);
@@ -123,7 +160,7 @@ export default function ClassroomPage() {
     }
   };
 
-  const isLocked = activeCourse.required_tier === "pro" && currentMember.plan_tier === "free";
+  const isLocked = activeCourse.required_tier === "pro" && (!currentMember || currentMember.plan_tier === "free");
 
   const totalLessonsCount =
     activeCourse.modules?.reduce((acc, m) => acc + m.lessons.length, 0) || 0;
@@ -478,12 +515,14 @@ export default function ClassroomPage() {
       </main>
 
       {/* Membership & Plans Modal */}
-      <MembershipModal
-        isOpen={isMembershipOpen}
-        onClose={() => setIsMembershipOpen(false)}
-        currentMember={currentMember}
-        onUpdateTier={handleUpdateTier}
-      />
+      {currentMember && (
+        <MembershipModal
+          isOpen={isMembershipOpen}
+          onClose={() => setIsMembershipOpen(false)}
+          currentMember={currentMember}
+          onUpdateTier={handleUpdateTier}
+        />
+      )}
 
       {/* Nova AI Knowledge Assistant Modal */}
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

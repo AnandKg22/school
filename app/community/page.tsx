@@ -37,7 +37,7 @@ export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [reportToast, setReportToast] = useState<string | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
-  const [currentMember, setCurrentMember] = useState<Member>(MOCK_MEMBERS[0]);
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
 
   // Composer state
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -52,22 +52,58 @@ export default function CommunityPage() {
   });
 
   useEffect(() => {
-    setCurrentMember(getActiveMember());
+    let isMounted = true;
+
+    const checkSession = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+          if (session) {
+            setCurrentMember(getActiveMember());
+          } else {
+            setCurrentMember(null);
+          }
+        }
+      } catch {
+        if (isMounted) setCurrentMember(null);
+      }
+    };
+    checkSession();
+
     const unsubscribe = subscribeToMemberUpdates((updated) => {
-      setCurrentMember(updated);
+      if (isMounted) setCurrentMember(updated);
+    });
+
+    let authUnsub: (() => void) | undefined;
+    import("@/lib/supabase").then(({ supabase }) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (isMounted) {
+          if (session) {
+            setCurrentMember(getActiveMember());
+          } else {
+            setCurrentMember(null);
+          }
+        }
+      });
+      authUnsub = () => subscription.unsubscribe();
     });
 
     // Fetch live posts from API
     fetch("/api/v1/posts")
       .then((res) => res.json())
       .then((data) => {
-        if (data.posts && data.posts.length > 0) {
+        if (isMounted && data.posts && data.posts.length > 0) {
           setPosts(data.posts);
         }
       })
       .catch((err) => console.warn("Failed to load live posts, retaining cache:", err));
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+      if (authUnsub) authUnsub();
+    };
   }, []);
 
   const handleReportPost = (postId: string) => {
@@ -77,7 +113,7 @@ export default function CommunityPage() {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
+    if (!currentMember || !newTitle.trim() || !newContent.trim()) return;
 
     const title = newTitle.trim();
     const content = newContent.trim();
@@ -112,21 +148,23 @@ export default function CommunityPage() {
     }
 
     // Local fallback
-    const fallbackPost: Post = {
-      id: `post_${Date.now()}`,
-      space_id: spaceId,
-      author_id: currentMember.id,
-      author: currentMember,
-      title,
-      content,
-      is_pinned: false,
-      likes_count: 0,
-      comments_count: 0,
-      created_at: new Date().toISOString(),
-      user_has_liked: false,
-      comments: [],
-    };
-    setPosts((prev) => [fallbackPost, ...prev]);
+    if (currentMember) {
+      const fallbackPost: Post = {
+        id: `post_${Date.now()}`,
+        space_id: spaceId,
+        author_id: currentMember.id,
+        author: currentMember,
+        title,
+        content,
+        is_pinned: false,
+        likes_count: 0,
+        comments_count: 0,
+        created_at: new Date().toISOString(),
+        user_has_liked: false,
+        comments: [],
+      };
+      setPosts((prev) => [fallbackPost, ...prev]);
+    }
   };
 
   const handleToggleLike = (postId: string) => {
@@ -147,7 +185,7 @@ export default function CommunityPage() {
 
   const handleAddComment = async (postId: string) => {
     const text = commentInputs[postId]?.trim();
-    if (!text) return;
+    if (!currentMember || !text) return;
 
     setCommentInputs({ ...commentInputs, [postId]: "" });
     setExpandedComments({ ...expandedComments, [postId]: true });
@@ -256,7 +294,32 @@ export default function CommunityPage() {
 
             {/* "Write something" Input Card (Matches Skool Screenshot 4) */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs">
-              {!isComposerOpen ? (
+              {!currentMember ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left py-2 px-1">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0F172A] dark:text-white">
+                      Join the discussion in AKSchool Community
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Sign in or create an account to post, ask questions, and share project updates.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href="/login?redirect=/community"
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/login?tab=register&redirect=/community"
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
+                    >
+                      Join Community
+                    </Link>
+                  </div>
+                </div>
+              ) : !isComposerOpen ? (
                 <div
                   onClick={() => setIsComposerOpen(true)}
                   className="flex items-center gap-3 cursor-pointer group"
@@ -536,32 +599,41 @@ export default function CommunityPage() {
                         )}
 
                         {/* Comment Input */}
-                        <div className="flex items-center gap-2 pt-1">
-                          <input
-                            type="text"
-                            value={commentInputs[post.id] || ""}
-                            onChange={(e) =>
-                              setCommentInputs({
-                                ...commentInputs,
-                                [post.id]: e.target.value,
-                              })
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleAddComment(post.id);
+                        {currentMember ? (
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              value={commentInputs[post.id] || ""}
+                              onChange={(e) =>
+                                setCommentInputs({
+                                  ...commentInputs,
+                                  [post.id]: e.target.value,
+                                })
                               }
-                            }}
-                            placeholder="Write a comment..."
-                            className="flex-1 text-xs bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 rounded-xl px-3.5 py-2 text-[#0F172A] dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
-                          />
-                          <button
-                            onClick={() => handleAddComment(post.id)}
-                            className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-2xs"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAddComment(post.id);
+                                }
+                              }}
+                              placeholder="Write a comment..."
+                              className="flex-1 text-xs bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 rounded-xl px-3.5 py-2 text-[#0F172A] dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
+                            />
+                            <button
+                              onClick={() => handleAddComment(post.id)}
+                              className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-2xs"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="pt-2 text-center text-xs text-slate-400">
+                            <Link href="/login?redirect=/community" className="text-blue-600 hover:underline font-semibold">
+                              Sign in
+                            </Link>{" "}
+                            to post a comment.
+                          </div>
+                        )}
                       </div>
                     )}
                   </article>
