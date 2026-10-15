@@ -101,29 +101,105 @@ export default function AdminConsolePage() {
     });
   }, []);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch("/api/v1/admin/settings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            communityName,
+            tagline,
+            rules,
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync community settings to server:", err);
+    }
+
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 2000);
   };
 
-  const handleAddKnowledge = (e: React.FormEvent) => {
+  const handleAddKnowledge = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDocTitle.trim() || !newDocContent.trim()) return;
 
-    const newDoc: AIKnowledgeItem = {
-      id: `k_${Date.now()}`,
-      title: newDocTitle.trim(),
-      content: newDocContent.trim(),
-      source_type: newDocType,
-    };
-    setKnowledgeList([...knowledgeList, newDoc]);
+    const title = newDocTitle.trim();
+    const content = newDocContent.trim();
+    const sourceType = newDocType;
+
     setNewDocTitle("");
     setNewDocContent("");
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        const res = await fetch("/api/v1/admin/knowledge", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            title,
+            content,
+            sourceType,
+          }),
+        });
+        const data = await res.json();
+        if (data.document) {
+          setKnowledgeList((prev) => [...prev, data.document]);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not sync knowledge item to server:", err);
+    }
+
+    // Fallback local update
+    const newDoc: AIKnowledgeItem = {
+      id: `k_${Date.now()}`,
+      title,
+      content,
+      source_type: sourceType,
+    };
+    setKnowledgeList((prev) => [...prev, newDoc]);
   };
 
-  const handleDismissFlag = (id: string) => {
-    setFlaggedPosts(flaggedPosts.filter((f) => f.id !== id));
+  const handleDismissFlag = async (id: string) => {
+    setFlaggedPosts((prev) => prev.filter((f) => f.id !== id));
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch("/api/v1/moderation/reports", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            reportId: id,
+            action: "dismiss",
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync report dismissal to server:", err);
+    }
   };
 
   const embedCodeSnippet = `<!-- AKSchool Embed Widget -->
