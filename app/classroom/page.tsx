@@ -40,11 +40,50 @@ export default function ClassroomPage() {
     les_01: true,
   });
 
+  const [courses, setCourses] = useState(MOCK_COURSES);
+
   useEffect(() => {
     setCurrentMember(getActiveMember());
     const unsubscribe = subscribeToMemberUpdates((updated) => {
       setCurrentMember(updated);
     });
+
+    // 1. Fetch live courses from API
+    fetch("/api/v1/courses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.courses && data.courses.length > 0) {
+          setCourses(data.courses);
+          setActiveCourse(data.courses[0]);
+          if (data.courses[0].modules?.[0]?.lessons?.[0]) {
+            setActiveLesson(data.courses[0].modules[0].lessons[0]);
+          }
+        }
+      })
+      .catch((err) => console.warn("Could not load live courses, using offline curriculum:", err));
+
+    // 2. Fetch authenticated user's completed lessons
+    import("@/lib/supabase").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          fetch("/api/v1/learning/progress", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.completedLessons) {
+                const map: Record<string, boolean> = {};
+                data.completedLessons.forEach((id: string) => {
+                  map[id] = true;
+                });
+                setCompletedLessons(map);
+              }
+            })
+            .catch((err) => console.warn("Could not load server progress:", err));
+        }
+      });
+    });
+
     return unsubscribe;
   }, []);
 
@@ -54,11 +93,34 @@ export default function ClassroomPage() {
     setCurrentMember(updated);
   };
 
-  const toggleLessonCompletion = (lessonId: string) => {
+  const toggleLessonCompletion = async (lessonId: string) => {
+    const nextState = !completedLessons[lessonId];
     setCompletedLessons((prev) => ({
       ...prev,
-      [lessonId]: !prev[lessonId],
+      [lessonId]: nextState,
     }));
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch("/api/v1/learning/progress", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            lessonId,
+            courseId: activeCourse.id,
+            completed: nextState,
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn("Could not sync lesson progress to server, saved locally:", err);
+    }
   };
 
   const isLocked = activeCourse.required_tier === "pro" && currentMember.plan_tier === "free";
@@ -76,7 +138,7 @@ export default function ClassroomPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
         {/* Course Switcher Pills */}
         <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-none">
-          {MOCK_COURSES.map((course) => {
+          {courses.map((course) => {
             const isSelected = activeCourse.id === course.id;
             return (
               <button
