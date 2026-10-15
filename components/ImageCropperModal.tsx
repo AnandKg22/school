@@ -20,9 +20,15 @@ export function ImageCropperModal({
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const positionRef = useRef(position);
+
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   // Use ref for drag tracking to eliminate state lag and dropped moves
   const dragTracker = useRef<{
@@ -74,7 +80,7 @@ export function ImageCropperModal({
     ctx.restore();
   }, [position, rotation, scale]);
 
-  // Load new image source
+  // Load new image source ONLY when modal opens or imageSrc changes
   useEffect(() => {
     if (imageSrc && isOpen) {
       setScale(1);
@@ -85,16 +91,18 @@ export function ImageCropperModal({
       img.crossOrigin = "anonymous";
       img.onload = () => {
         imageRef.current = img;
-        draw();
+        setImageLoaded((prev) => prev + 1);
       };
       img.src = imageSrc;
+    } else {
+      imageRef.current = null;
     }
-  }, [imageSrc, isOpen, draw]);
+  }, [imageSrc, isOpen]);
 
-  // Redraw when transform parameters change
+  // Redraw when transform parameters change or image finishes loading
   useEffect(() => {
     draw();
-  }, [draw]);
+  }, [draw, imageLoaded]);
 
   // --- Pointer Event Handlers for Fluid Dragging & Centering ---
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -104,11 +112,11 @@ export function ImageCropperModal({
       active: true,
       startX: e.clientX,
       startY: e.clientY,
-      origX: position.x,
-      origY: position.y,
+      origX: positionRef.current.x,
+      origY: positionRef.current.y,
     };
     try {
-      e.currentTarget.setPointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {}
   };
 
@@ -123,11 +131,13 @@ export function ImageCropperModal({
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    dragTracker.current.active = false;
-    setIsDragging(false);
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {}
+    if (dragTracker.current.active) {
+      dragTracker.current.active = false;
+      setIsDragging(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+    }
   };
 
   // Zoom Helpers
@@ -137,6 +147,13 @@ export function ImageCropperModal({
 
   const handleZoomOut = () => {
     setScale((s) => Math.max(0.5, Number((s - 0.15).toFixed(2))));
+  };
+
+  // Mouse Wheel Zoom
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    setScale((s) => Math.min(3.5, Math.max(0.5, Number((s + delta).toFixed(2)))));
   };
 
   const handleResetCenter = () => {
@@ -217,6 +234,7 @@ export function ImageCropperModal({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
+            onWheel={handleWheel}
           >
             {/* Canvas displaying transformed image */}
             <canvas
