@@ -19,15 +19,40 @@ import {
   Globe,
   Plus,
   Copy,
-  Check
+  Check,
+  Video,
+  ChevronDown,
+  ChevronRight,
+  Lock,
+  Unlock,
+  ExternalLink,
 } from "lucide-react";
-import { MOCK_COMMUNITY, MOCK_MEMBERS, MOCK_AI_KNOWLEDGE, MOCK_PLANS } from "@/lib/school-mock";
-import { Member, AIKnowledgeItem } from "@/lib/types";
+import { MOCK_COMMUNITY, MOCK_MEMBERS, MOCK_AI_KNOWLEDGE, MOCK_PLANS, MOCK_COURSES } from "@/lib/school-mock";
+import { Member, AIKnowledgeItem, Course, CourseModule, CourseLesson, Community } from "@/lib/types";
+import {
+  CreateCourseModal,
+  CreateModuleModal,
+  CreateLessonModal,
+  CreateCommunityModal,
+} from "@/components/CurriculumModals";
 
 export default function AdminConsolePage() {
-  const [activeTab, setActiveTab] = useState<"overview" | "branding" | "moderation" | "ai" | "plans" | "embed">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "courses" | "communities" | "branding" | "moderation" | "ai" | "plans" | "embed"
+  >("overview");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
+
+  // Curriculum & Communities State
+  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
+  const [communities, setCommunities] = useState<Community[]>([MOCK_COMMUNITY]);
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(MOCK_COURSES[0]?.id || null);
+  const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
+  const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
+  const [selectedCourseForModule, setSelectedCourseForModule] = useState<string>("");
+  const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<{ id: string; title: string }>({ id: "", title: "" });
 
   // Settings State
   const [communityName, setCommunityName] = useState(MOCK_COMMUNITY.name);
@@ -66,14 +91,33 @@ export default function AdminConsolePage() {
   const [allowedOrigins, setAllowedOrigins] = useState("https://akstack.com, https://preview.webflow.io");
 
   useEffect(() => {
-    // 1. Check local active member
+    // 1. Fetch real courses & communities
+    fetch("/api/v1/courses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.courses && Array.isArray(data.courses) && data.courses.length > 0) {
+          setCourses(data.courses);
+        }
+      })
+      .catch((err) => console.warn("Could not load courses:", err));
+
+    fetch("/api/v1/communities")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.communities && Array.isArray(data.communities) && data.communities.length > 0) {
+          setCommunities(data.communities);
+        }
+      })
+      .catch((err) => console.warn("Could not load communities:", err));
+
+    // 2. Check local active member
     const saved = localStorage.getItem("school_active_member_id");
     if (saved) {
       const found = MOCK_MEMBERS.find((m) => m.id === saved);
       if (found) setCurrentMember(found);
     }
 
-    // 2. Verify real Supabase session and profile role
+    // 3. Verify real Supabase session and profile role
     import("@/lib/supabase").then(({ supabase }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session) {
@@ -100,6 +144,48 @@ export default function AdminConsolePage() {
       });
     });
   }, []);
+
+  const handleCourseCreated = (newCourse: Course) => {
+    setCourses((prev) => [newCourse, ...prev]);
+    setExpandedCourseId(newCourse.id);
+  };
+
+  const handleModuleCreated = (courseId: string, newModule: CourseModule) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id === courseId) {
+          return {
+            ...c,
+            modules: [...(c.modules || []), newModule],
+            total_lessons: (c.total_lessons || 0) + (newModule.lessons?.length || 0),
+          };
+        }
+        return c;
+      })
+    );
+  };
+
+  const handleLessonCreated = (moduleId: string, newLesson: CourseLesson) => {
+    setCourses((prev) =>
+      prev.map((c) => ({
+        ...c,
+        total_lessons: (c.total_lessons || 0) + 1,
+        modules: (c.modules || []).map((m) => {
+          if (m.id === moduleId) {
+            return {
+              ...m,
+              lessons: [...(m.lessons || []), newLesson],
+            };
+          }
+          return m;
+        }),
+      }))
+    );
+  };
+
+  const handleCommunityCreated = (newComm: Community) => {
+    setCommunities((prev) => [newComm, ...prev]);
+  };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,6 +350,8 @@ export default function AdminConsolePage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
           {[
             { id: "overview", label: "Overview & KPIs", icon: Layers },
+            { id: "courses", label: "Curriculum Studio", icon: BookOpen, count: courses.length },
+            { id: "communities", label: "Communities", icon: Globe, count: communities.length },
             { id: "branding", label: "Branding & Rules", icon: Settings },
             { id: "moderation", label: "Content Moderation", icon: AlertTriangle, count: flaggedPosts.length },
             { id: "ai", label: "AI Knowledge Base", icon: Sparkles },
@@ -285,7 +373,7 @@ export default function AdminConsolePage() {
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-rose-500/10 text-rose-500"}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-600 dark:text-blue-400"}`}>
                     {tab.count}
                   </span>
                 )}
@@ -360,6 +448,321 @@ export default function AdminConsolePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Curriculum Studio */}
+        {activeTab === "courses" && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  Course Management
+                </span>
+                <h2 className="text-lg font-black text-[#0F172A] dark:text-white mt-1">
+                  Curriculum Studio & Masterclass Builder
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Create and manage courses, curriculum modules, and interactive video lessons with study blueprints.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsCreateCourseOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Course</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCourseForModule(courses[0]?.id || "");
+                    setIsCreateModuleOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>Add Module</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Courses Accordion List */}
+            <div className="space-y-4">
+              {courses.map((course) => {
+                const isExpanded = expandedCourseId === course.id;
+                const totalLessons =
+                  course.total_lessons ||
+                  course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) ||
+                  0;
+
+                return (
+                  <div
+                    key={course.id}
+                    className="bg-white dark:bg-slate-800 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden shadow-2xs transition-all"
+                  >
+                    {/* Course Header Row */}
+                    <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        {course.cover_url && (
+                          <img
+                            src={course.cover_url}
+                            alt={course.title}
+                            className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                          />
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-extrabold text-sm sm:text-base text-[#0F172A] dark:text-white">
+                              {course.title}
+                            </h3>
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              Tier: {course.required_tier || "free"}
+                            </span>
+                            {course.is_locked ? (
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 flex items-center gap-1">
+                                <Lock className="w-2.5 h-2.5" /> Locked
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1">
+                                <Unlock className="w-2.5 h-2.5" /> Open
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                            {course.description || "Comprehensive hands-on curriculum."}
+                          </p>
+                          <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-2 font-medium">
+                            <span>Slug: <strong className="text-slate-600 dark:text-slate-300 font-mono">{course.slug}</strong></span>
+                            <span>•</span>
+                            <span>{course.modules?.length || 0} Modules</span>
+                            <span>•</span>
+                            <span>{totalLessons} Lessons</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <Link
+                          href={`/classroom?course=${course.slug}`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Preview</span>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setSelectedCourseForModule(course.id);
+                            setIsCreateModuleOpen(true);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Module</span>
+                        </button>
+                        <button
+                          onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          title="Toggle modules"
+                        >
+                          {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Modules & Lessons Dropdown View */}
+                    {isExpanded && (
+                      <div className="border-t border-[#E2E8F0] dark:border-slate-700 bg-[#F8FAFC] dark:bg-slate-900/60 p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                            Course Modules & Syllabus Breakdown
+                          </h4>
+                          <button
+                            onClick={() => {
+                              setSelectedCourseForModule(course.id);
+                              setIsCreateModuleOpen(true);
+                            }}
+                            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add New Module</span>
+                          </button>
+                        </div>
+
+                        {(!course.modules || course.modules.length === 0) ? (
+                          <div className="text-center py-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
+                            <p className="text-xs text-slate-400 font-medium">No modules created for this course yet.</p>
+                            <button
+                              onClick={() => {
+                                setSelectedCourseForModule(course.id);
+                                setIsCreateModuleOpen(true);
+                              }}
+                              className="mt-2 text-xs font-bold text-blue-600 hover:underline"
+                            >
+                              + Create First Module
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {course.modules.map((module, modIdx) => (
+                              <div
+                                key={module.id}
+                                className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 space-y-3"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 text-[10px] font-black flex items-center justify-center">
+                                      {modIdx + 1}
+                                    </span>
+                                    <h5 className="text-xs font-extrabold text-[#0F172A] dark:text-white">
+                                      {module.title}
+                                    </h5>
+                                    <span className="text-[10px] text-slate-400">
+                                      ({module.lessons?.length || 0} lessons)
+                                    </span>
+                                  </div>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedModuleForLesson({ id: module.id, title: module.title });
+                                      setIsCreateLessonOpen(true);
+                                    }}
+                                    className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>Add Lesson</span>
+                                  </button>
+                                </div>
+
+                                {/* Lessons List */}
+                                {(!module.lessons || module.lessons.length === 0) ? (
+                                  <p className="text-[11px] text-slate-400 italic pl-7">
+                                    No lessons added yet. Click &ldquo;Add Lesson&rdquo; to publish video lectures.
+                                  </p>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                                    {module.lessons.map((lesson, lesIdx) => (
+                                      <div
+                                        key={lesson.id}
+                                        className="flex items-center justify-between p-2.5 rounded-xl bg-[#F8FAFC] dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60 text-xs"
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <Video className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                          <span className="font-semibold text-[#0F172A] dark:text-slate-200 truncate">
+                                            {lesIdx + 1}. {lesson.title}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0 text-[10px] text-slate-400">
+                                          {lesson.is_free_preview && (
+                                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-bold">
+                                              Free Preview
+                                            </span>
+                                          )}
+                                          <span>{lesson.duration_minutes || 10}m</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Multi-Tenant Communities */}
+        {activeTab === "communities" && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                  Tenant Management
+                </span>
+                <h2 className="text-lg font-black text-[#0F172A] dark:text-white mt-1">
+                  Multi-Tenant Community Spaces
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Launch and administrate isolated school community hubs, customer forums, or cohort workspaces.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsCreateCommunityOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-600/20 transition-all self-start md:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Launch New Community</span>
+              </button>
+            </div>
+
+            {/* Communities Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {communities.map((comm) => (
+                <div
+                  key={comm.id}
+                  className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs space-y-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-purple-600/20">
+                        {comm.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-base text-[#0F172A] dark:text-white">{comm.name}</h3>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${comm.is_private ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                            {comm.is_private ? "Private" : "Public"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">
+                          school.akstack.com/{comm.slug}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-bold text-slate-400">
+                      {comm.member_count || 1} Members
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#475569] dark:text-slate-300 font-medium">
+                    {comm.tagline || comm.description || "Interactive learning community on AKSchool."}
+                  </p>
+
+                  {comm.rules && (
+                    <div className="p-3 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+                      <strong className="text-slate-700 dark:text-slate-300 block mb-0.5">Code of Conduct:</strong>
+                      <span className="line-clamp-2">{comm.rules}</span>
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs font-bold">
+                    <Link
+                      href="/community"
+                      className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    >
+                      <span>Open Community Feed</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                    <Link
+                      href="/classroom"
+                      className="text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                    >
+                      <span>Open Classroom</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -721,6 +1124,35 @@ export default function AdminConsolePage() {
       </main>
 
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+
+      {/* Creation Modals */}
+      <CreateCourseModal
+        isOpen={isCreateCourseOpen}
+        onClose={() => setIsCreateCourseOpen(false)}
+        onCourseCreated={handleCourseCreated}
+      />
+
+      <CreateModuleModal
+        isOpen={isCreateModuleOpen}
+        courses={courses}
+        initialCourseId={selectedCourseForModule}
+        onClose={() => setIsCreateModuleOpen(false)}
+        onModuleCreated={handleModuleCreated}
+      />
+
+      <CreateLessonModal
+        isOpen={isCreateLessonOpen}
+        moduleId={selectedModuleForLesson.id}
+        moduleTitle={selectedModuleForLesson.title}
+        onClose={() => setIsCreateLessonOpen(false)}
+        onLessonCreated={handleLessonCreated}
+      />
+
+      <CreateCommunityModal
+        isOpen={isCreateCommunityOpen}
+        onClose={() => setIsCreateCommunityOpen(false)}
+        onCommunityCreated={handleCommunityCreated}
+      />
     </div>
   );
 }

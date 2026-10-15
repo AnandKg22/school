@@ -22,11 +22,17 @@ import {
   Share2,
   Zap,
   Star,
-  Users
+  Users,
+  Plus
 } from "lucide-react";
 import { MOCK_COURSES, MOCK_MEMBERS } from "@/lib/school-mock";
-import { CourseLesson, CourseModule, Member } from "@/lib/types";
+import { Course, CourseLesson, CourseModule, Member } from "@/lib/types";
 import { getActiveMember, saveActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
+import {
+  CreateCourseModal,
+  CreateModuleModal,
+  CreateLessonModal,
+} from "@/components/CurriculumModals";
 
 export default function ClassroomPage() {
   const [activeCourse, setActiveCourse] = useState(MOCK_COURSES[0]);
@@ -40,7 +46,15 @@ export default function ClassroomPage() {
     les_01: true,
   });
 
-  const [courses, setCourses] = useState(MOCK_COURSES);
+  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
+
+  // Curriculum Creator Modals
+  const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
+  const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [activeModuleForLesson, setActiveModuleForLesson] = useState<{ id: string; title: string } | null>(null);
+
+  const isOwnerOrAdmin = currentMember?.role === "owner" || currentMember?.role === "admin";
 
   useEffect(() => {
     let isMounted = true;
@@ -130,6 +144,56 @@ export default function ClassroomPage() {
     setCurrentMember(updated);
   };
 
+  const handleCourseCreated = (newCourse: Course) => {
+    setCourses((prev) => [...prev, newCourse]);
+    setActiveCourse(newCourse);
+    if (newCourse.modules && newCourse.modules.length > 0 && newCourse.modules[0].lessons.length > 0) {
+      setActiveLesson(newCourse.modules[0].lessons[0]);
+    }
+  };
+
+  const handleModuleCreated = (courseId: string, newModule: CourseModule) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.id === courseId) {
+          const updatedModules = [...(c.modules || []), newModule];
+          const updatedCourse = { ...c, modules: updatedModules };
+          if (activeCourse.id === courseId) {
+            setActiveCourse(updatedCourse);
+          }
+          return updatedCourse;
+        }
+        return c;
+      })
+    );
+  };
+
+  const handleLessonCreated = (moduleId: string, newLesson: CourseLesson) => {
+    setCourses((prev) =>
+      prev.map((c) => {
+        if (c.modules?.some((m) => m.id === moduleId)) {
+          const updatedModules = c.modules.map((m) => {
+            if (m.id === moduleId) {
+              return { ...m, lessons: [...m.lessons, newLesson] };
+            }
+            return m;
+          });
+          const updatedCourse = {
+            ...c,
+            modules: updatedModules,
+            total_lessons: (c.total_lessons || 0) + 1,
+          };
+          if (activeCourse.id === c.id) {
+            setActiveCourse(updatedCourse);
+            setActiveLesson(newLesson);
+          }
+          return updatedCourse;
+        }
+        return c;
+      })
+    );
+  };
+
   const toggleLessonCompletion = async (lessonId: string) => {
     const nextState = !completedLessons[lessonId];
     setCompletedLessons((prev) => ({
@@ -210,6 +274,17 @@ export default function ClassroomPage() {
               </button>
             );
           })}
+
+          {/* Creator / Admin: + New Course action */}
+          {isOwnerOrAdmin && (
+            <button
+              onClick={() => setIsCreateCourseOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 border border-dashed border-blue-300 dark:border-blue-800 transition-all whitespace-nowrap shadow-2xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Course</span>
+            </button>
+          )}
         </div>
 
         {/* Main 2-Column Content Grid (Matches Skool Screenshot 2) */}
@@ -456,9 +531,21 @@ export default function ClassroomPage() {
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Course Modules & Lessons
                 </h3>
-                <span className="text-[10px] font-bold text-blue-600">
-                  {progressPct}% Done
-                </span>
+                <div className="flex items-center gap-2">
+                  {isOwnerOrAdmin && (
+                    <button
+                      onClick={() => setIsCreateModuleOpen(true)}
+                      className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors"
+                      title="Add a new chapter module to this course"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Module</span>
+                    </button>
+                  )}
+                  <span className="text-[10px] font-bold text-blue-600">
+                    {progressPct}% Done
+                  </span>
+                </div>
               </div>
 
               {/* Progress Bar */}
@@ -472,8 +559,21 @@ export default function ClassroomPage() {
               <div className="space-y-4">
                 {activeCourse.modules?.map((mod) => (
                   <div key={mod.id} className="space-y-1.5">
-                    <div className="text-xs font-bold text-[#0F172A] dark:text-white px-2 py-1">
-                      {mod.title}
+                    <div className="flex items-center justify-between text-xs font-bold text-[#0F172A] dark:text-white px-2 py-1">
+                      <span>{mod.title}</span>
+                      {isOwnerOrAdmin && (
+                        <button
+                          onClick={() => {
+                            setActiveModuleForLesson({ id: mod.id, title: mod.title });
+                            setIsCreateLessonOpen(true);
+                          }}
+                          className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 transition-colors"
+                          title="Add lesson to this module"
+                        >
+                          <Plus className="w-2.5 h-2.5" />
+                          <span>Add Lesson</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="space-y-1">
@@ -521,6 +621,34 @@ export default function ClassroomPage() {
           onClose={() => setIsMembershipOpen(false)}
           currentMember={currentMember}
           onUpdateTier={handleUpdateTier}
+        />
+      )}
+
+      {/* Curriculum Creator Modals */}
+      <CreateCourseModal
+        isOpen={isCreateCourseOpen}
+        onClose={() => setIsCreateCourseOpen(false)}
+        onCourseCreated={handleCourseCreated}
+      />
+
+      <CreateModuleModal
+        isOpen={isCreateModuleOpen}
+        courses={courses}
+        initialCourseId={activeCourse.id}
+        onClose={() => setIsCreateModuleOpen(false)}
+        onModuleCreated={handleModuleCreated}
+      />
+
+      {activeModuleForLesson && (
+        <CreateLessonModal
+          isOpen={isCreateLessonOpen}
+          moduleId={activeModuleForLesson.id}
+          moduleTitle={activeModuleForLesson.title}
+          onClose={() => {
+            setIsCreateLessonOpen(false);
+            setActiveModuleForLesson(null);
+          }}
+          onLessonCreated={handleLessonCreated}
         />
       )}
 
