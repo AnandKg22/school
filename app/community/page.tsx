@@ -56,6 +56,17 @@ export default function CommunityPage() {
     const unsubscribe = subscribeToMemberUpdates((updated) => {
       setCurrentMember(updated);
     });
+
+    // Fetch live posts from API
+    fetch("/api/v1/posts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.posts && data.posts.length > 0) {
+          setPosts(data.posts);
+        }
+      })
+      .catch((err) => console.warn("Failed to load live posts, retaining cache:", err));
+
     return unsubscribe;
   }, []);
 
@@ -64,17 +75,50 @@ export default function CommunityPage() {
     setTimeout(() => setReportToast(null), 3000);
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
 
-    const newPost: Post = {
+    const title = newTitle.trim();
+    const content = newContent.trim();
+    const spaceId = newSpaceId;
+
+    setNewTitle("");
+    setNewContent("");
+    setIsComposerOpen(false);
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch("/api/v1/posts", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ title, content, spaceId }),
+      });
+
+      const data = await res.json();
+      if (data.post) {
+        setPosts((prev) => [data.post, ...prev]);
+        return;
+      }
+    } catch (err) {
+      console.warn("Could not persist post to server, saving locally:", err);
+    }
+
+    // Local fallback
+    const fallbackPost: Post = {
       id: `post_${Date.now()}`,
-      space_id: newSpaceId,
+      space_id: spaceId,
       author_id: currentMember.id,
       author: currentMember,
-      title: newTitle.trim(),
-      content: newContent.trim(),
+      title,
+      content,
       is_pinned: false,
       likes_count: 0,
       comments_count: 0,
@@ -82,11 +126,7 @@ export default function CommunityPage() {
       user_has_liked: false,
       comments: [],
     };
-
-    setPosts([newPost, ...posts]);
-    setNewTitle("");
-    setNewContent("");
-    setIsComposerOpen(false);
+    setPosts((prev) => [fallbackPost, ...prev]);
   };
 
   const handleToggleLike = (postId: string) => {
@@ -105,22 +145,62 @@ export default function CommunityPage() {
     );
   };
 
-  const handleAddComment = (postId: string) => {
+  const handleAddComment = async (postId: string) => {
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
-    setPosts(
-      posts.map((p) => {
+    setCommentInputs({ ...commentInputs, [postId]: "" });
+    setExpandedComments({ ...expandedComments, [postId]: true });
+
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch(`/api/v1/posts/${postId}/comments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ content: text }),
+      });
+
+      const data = await res.json();
+      if (data.comment) {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                comments_count: (p.comments_count || 0) + 1,
+                comments: [...(p.comments || []), data.comment],
+              };
+            }
+            return p;
+          })
+        );
+        return;
+      }
+    } catch (err) {
+      console.warn("Failed to save comment to server, appending locally:", err);
+    }
+
+    // Local fallback
+    const newC = {
+      id: `c_${Date.now()}`,
+      post_id: postId,
+      author_id: currentMember.id,
+      author: currentMember,
+      content: text,
+      likes_count: 0,
+      created_at: new Date().toISOString(),
+    };
+
+    setPosts((prev) =>
+      prev.map((p) => {
         if (p.id === postId) {
-          const newC = {
-            id: `c_${Date.now()}`,
-            post_id: postId,
-            author_id: currentMember.id,
-            author: currentMember,
-            content: text,
-            likes_count: 0,
-            created_at: new Date().toISOString(),
-          };
           return {
             ...p,
             comments_count: (p.comments_count || 0) + 1,
@@ -130,9 +210,6 @@ export default function CommunityPage() {
         return p;
       })
     );
-
-    setCommentInputs({ ...commentInputs, [postId]: "" });
-    setExpandedComments({ ...expandedComments, [postId]: true });
   };
 
   const filteredPosts = posts
