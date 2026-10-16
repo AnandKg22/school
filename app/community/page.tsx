@@ -30,10 +30,13 @@ import {
   Globe,
   Layers,
   Plus,
+  BarChart3,
+  Trash2,
 } from "lucide-react";
 import { MOCK_POSTS, MOCK_SPACES, MOCK_MEMBERS, MOCK_COMMUNITY } from "@/lib/school-mock";
-import { Post, Member, Space } from "@/lib/types";
+import { Post, Member, Space, Poll } from "@/lib/types";
 import { getActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
+import { PollWidget } from "@/components/PollWidget";
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
@@ -61,6 +64,9 @@ export default function CommunityPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newSpaceId, setNewSpaceId] = useState(MOCK_SPACES[1].id);
+  const [showPollCreator, setShowPollCreator] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   // Active comment input
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -136,8 +142,29 @@ export default function CommunityPage() {
     const content = newContent.trim();
     const spaceId = newSpaceId;
 
+    let attachedPoll: Poll | undefined = undefined;
+    if (showPollCreator && pollQuestion.trim()) {
+      const validOptions = pollOptions.filter((opt) => opt.trim().length > 0);
+      if (validOptions.length >= 2) {
+        attachedPoll = {
+          id: `poll_${Date.now()}`,
+          post_id: `post_${Date.now()}`,
+          question: pollQuestion.trim(),
+          total_votes: 0,
+          options: validOptions.map((optText, idx) => ({
+            id: `opt_${Date.now()}_${idx}`,
+            text: optText.trim(),
+            votes_count: 0,
+          })),
+        };
+      }
+    }
+
     setNewTitle("");
     setNewContent("");
+    setShowPollCreator(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
     setIsComposerOpen(false);
 
     try {
@@ -157,7 +184,8 @@ export default function CommunityPage() {
 
       const data = await res.json();
       if (data.post) {
-        setPosts((prev) => [data.post, ...prev]);
+        const postWithPoll = attachedPoll ? { ...data.post, poll: attachedPoll } : data.post;
+        setPosts((prev) => [postWithPoll, ...prev]);
         return;
       }
     } catch (err) {
@@ -165,23 +193,52 @@ export default function CommunityPage() {
     }
 
     // Local fallback
-    if (currentMember) {
-      const fallbackPost: Post = {
-        id: `post_${Date.now()}`,
-        space_id: spaceId,
-        author_id: currentMember.id,
-        author: currentMember,
-        title,
-        content,
-        is_pinned: false,
-        likes_count: 0,
-        comments_count: 0,
-        created_at: new Date().toISOString(),
-        user_has_liked: false,
-        comments: [],
-      };
-      setPosts((prev) => [fallbackPost, ...prev]);
-    }
+    const fallbackPost: Post = {
+      id: `post_${Date.now()}`,
+      space_id: spaceId,
+      author_id: currentMember.id,
+      author: currentMember,
+      title,
+      content,
+      is_pinned: false,
+      likes_count: 0,
+      comments_count: 0,
+      created_at: new Date().toISOString(),
+      user_has_liked: false,
+      comments: [],
+      poll: attachedPoll,
+    };
+    setPosts((prev) => [fallbackPost, ...prev]);
+  };
+
+  const handleVotePoll = (postId: string, optionId: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId && p.poll) {
+          const previousVotedId = p.poll.user_voted_option_id;
+          const updatedOptions = p.poll.options.map((opt) => {
+            if (opt.id === optionId) {
+              return { ...opt, votes_count: opt.votes_count + 1 };
+            }
+            if (previousVotedId && opt.id === previousVotedId) {
+              return { ...opt, votes_count: Math.max(0, opt.votes_count - 1) };
+            }
+            return opt;
+          });
+
+          return {
+            ...p,
+            poll: {
+              ...p.poll,
+              options: updatedOptions,
+              total_votes: previousVotedId ? p.poll.total_votes : p.poll.total_votes + 1,
+              user_voted_option_id: optionId,
+            },
+          };
+        }
+        return p;
+      })
+    );
   };
 
   const handleToggleLike = (postId: string) => {
@@ -395,6 +452,82 @@ export default function CommunityPage() {
                     className="w-full text-xs sm:text-sm bg-[#F8FAFC] dark:bg-slate-900 p-3 rounded-xl border border-[#E2E8F0] dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-600 text-[#0F172A] dark:text-slate-100 placeholder:text-slate-400"
                   />
 
+                  {/* Optional Poll Creator Toggle */}
+                  {showPollCreator ? (
+                    <div className="p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 space-y-2.5 animate-fadeIn">
+                      <div className="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                        <span className="flex items-center gap-1.5">
+                          <BarChart3 className="w-4 h-4" />
+                          <span>Attach Community Poll</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowPollCreator(false)}
+                          className="text-slate-400 hover:text-slate-600 text-xs"
+                        >
+                          Remove Poll
+                        </button>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={pollQuestion}
+                        onChange={(e) => setPollQuestion(e.target.value)}
+                        placeholder="Poll Question (e.g. Which LLM are you using in production?)"
+                        className="w-full text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                      />
+
+                      <div className="space-y-1.5">
+                        {pollOptions.map((opt, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const copy = [...pollOptions];
+                                copy[idx] = e.target.value;
+                                setPollOptions(copy);
+                              }}
+                              placeholder={`Option ${idx + 1}`}
+                              className="flex-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-[#0F172A] dark:text-white placeholder:text-slate-400"
+                            />
+                            {pollOptions.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                                className="p-2 text-slate-400 hover:text-red-500"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {pollOptions.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={() => setPollOptions([...pollOptions, ""])}
+                          className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add Option</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPollCreator(true)}
+                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-3 py-1.5 rounded-xl border border-dashed border-blue-300 dark:border-blue-800 transition-colors flex items-center gap-1.5"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        <span>Add Community Poll</span>
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
@@ -515,6 +648,14 @@ export default function CommunityPage() {
                       <MarkdownViewer content={post.content} />
                     </div>
 
+                    {/* Interactive Community Poll (Pillar 4) */}
+                    {post.poll && (
+                      <PollWidget
+                        poll={post.poll}
+                        onVote={(_pollId, optionId) => handleVotePoll(post.id, optionId)}
+                      />
+                    )}
+
                     {/* Interactions Bar (Exact match to Skool Screenshot 4) */}
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700/80 text-xs text-[#64748B]">
                       <div className="flex items-center gap-4">
@@ -545,7 +686,7 @@ export default function CommunityPage() {
 
                         {/* Commenter Avatars Pile as seen in Skool Screenshot */}
                         {post.comments && post.comments.length > 0 && (
-                          <div className="flex items-center -space-x-1.5 hidden sm:flex">
+                          <div className="hidden sm:flex items-center -space-x-1.5">
                             {post.comments.slice(0, 4).map((c, i) => (
                               <img
                                 key={i}

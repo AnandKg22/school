@@ -6,6 +6,7 @@ import { Users, BookOpen, Layers, ArrowRight, User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 import { Member } from "@/lib/types";
+import { StreakBadge } from "@/components/StreakBadge";
 
 export function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -90,6 +91,7 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              <StreakBadge memberId={currentMember?.id || "mem_001"} />
               <Link
                 href="/community"
                 className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#475569] dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 transition-colors"

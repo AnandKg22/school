@@ -23,16 +23,21 @@ import {
   Zap,
   Star,
   Users,
-  Plus
+  Plus,
+  FileQuestion,
+  GraduationCap,
+  Award
 } from "lucide-react";
-import { MOCK_COURSES, MOCK_MEMBERS } from "@/lib/school-mock";
-import { Course, CourseLesson, CourseModule, Member } from "@/lib/types";
+import { MOCK_COURSES, MOCK_MEMBERS, MOCK_QUIZZES, MOCK_CERTIFICATES } from "@/lib/school-mock";
+import { Course, CourseLesson, CourseModule, Member, Quiz, Certificate } from "@/lib/types";
 import { getActiveMember, saveActiveMember, subscribeToMemberUpdates } from "@/lib/member-storage";
 import {
   CreateCourseModal,
   CreateModuleModal,
   CreateLessonModal,
 } from "@/components/CurriculumModals";
+import { QuizModal } from "@/components/QuizModal";
+import { CertificateModal } from "@/components/CertificateModal";
 
 export default function ClassroomPage() {
   const [activeCourse, setActiveCourse] = useState(MOCK_COURSES[0]);
@@ -48,11 +53,30 @@ export default function ClassroomPage() {
 
   const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
 
+  // Pillar 3: Quizzes & Certificates State
+  const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [activeCertificate, setActiveCertificate] = useState<Certificate | null>(null);
+  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+
   // Curriculum Creator Modals
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
   const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
   const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
   const [activeModuleForLesson, setActiveModuleForLesson] = useState<{ id: string; title: string } | null>(null);
+
+  const handleOpenQuiz = (quizId?: string) => {
+    const q = MOCK_QUIZZES.find((item) => item.course_id === activeCourse.id || item.id === quizId) || MOCK_QUIZZES[0];
+    setActiveQuiz(q);
+    setIsQuizOpen(true);
+  };
+
+  const handleOpenCertificate = () => {
+    const certList = Object.values(MOCK_CERTIFICATES);
+    const cert = certList.find((c) => c.course_id === activeCourse.id) || certList[0] || null;
+    setActiveCertificate(cert);
+    setIsCertificateOpen(true);
+  };
 
   const isOwnerOrAdmin =
     currentMember?.role === "owner" ||
@@ -370,7 +394,25 @@ export default function ClassroomPage() {
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleOpenQuiz()}
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 transition-all flex items-center gap-1.5 shadow-2xs"
+                    title="Take Module Assessment Quiz to earn XP points"
+                  >
+                    <FileQuestion className="w-4 h-4 text-amber-600" />
+                    <span>Take Quiz (+150 XP)</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenCertificate()}
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 hover:bg-indigo-100 transition-all flex items-center gap-1.5 shadow-2xs"
+                    title="View and verify Course Certificate"
+                  >
+                    <GraduationCap className="w-4 h-4 text-indigo-600" />
+                    <span>Certificate</span>
+                  </button>
+
                   <button
                     onClick={() => toggleLessonCompletion(activeLesson.id)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -444,7 +486,7 @@ export default function ClassroomPage() {
               </div>
 
               {/* Code Blueprint Download Block */}
-              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-200 dark:border-blue-900">
+              <div className="mt-6 flex items-center justify-between bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-200 dark:border-blue-900">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
                     <Download className="w-4 h-4" />
@@ -621,6 +663,36 @@ export default function ClassroomPage() {
                 ))}
               </div>
             </div>
+
+            {/* Pillar 3: Course Certification & Knowledge Card in Sidebar */}
+            <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-2xl p-5 text-white border border-indigo-500/30 shadow-lg relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-2 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <Award className="w-4 h-4" />
+                <span>Verified Certification</span>
+              </div>
+              <h4 className="font-extrabold text-sm text-white leading-tight">
+                Complete all modules and earn your verified credential
+              </h4>
+              <p className="text-[11px] text-slate-300 mt-1 mb-4 leading-relaxed">
+                Pass the 5-question code comprehension assessment to unlock your tamper-proof cryptographic certificate.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenQuiz()}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-colors shadow-md"
+                >
+                  <FileQuestion className="w-3.5 h-3.5" />
+                  <span>Take Quiz</span>
+                </button>
+                <button
+                  onClick={() => handleOpenCertificate()}
+                  className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>Preview Cert</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -665,6 +737,24 @@ export default function ClassroomPage() {
 
       {/* Nova AI Knowledge Assistant Modal */}
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+
+      {/* Pillar 3: Interactive Quiz Runner Modal */}
+      <QuizModal
+        quiz={activeQuiz}
+        isOpen={isQuizOpen}
+        onClose={() => setIsQuizOpen(false)}
+        onClaimCertificate={() => {
+          setIsQuizOpen(false);
+          handleOpenCertificate();
+        }}
+      />
+
+      {/* Pillar 3: Printable High-Res Certificate Modal */}
+      <CertificateModal
+        certificate={activeCertificate}
+        isOpen={isCertificateOpen}
+        onClose={() => setIsCertificateOpen(false)}
+      />
     </div>
   );
 }

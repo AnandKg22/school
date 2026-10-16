@@ -1,4 +1,21 @@
-import { Community, Member, Space, Post, Course, MembershipPlan, AIKnowledgeItem } from "./types";
+import {
+  Community,
+  Member,
+  Space,
+  Post,
+  Course,
+  MembershipPlan,
+  AIKnowledgeItem,
+  Streak,
+  Badge,
+  LeaderboardEntry,
+  Quiz,
+  Certificate,
+  Poll,
+  Conversation,
+  DirectMessage,
+  CommunityEvent,
+} from "./types";
 
 export const MOCK_COMMUNITY: Community = {
   id: "comm_akschool_001",
@@ -154,6 +171,19 @@ Introduce yourself in the General space below! What AI project or application ar
     comments_count: 4,
     created_at: "2026-10-14T08:00:00Z",
     user_has_liked: true,
+    poll: {
+      id: "poll_001",
+      post_id: "post_001",
+      question: "Which AI stack are you prioritizing for production autonomous agents in 2026?",
+      total_votes: 184,
+      user_voted_option_id: "opt_1",
+      options: [
+        { id: "opt_1", text: "Multi-Agent Loops with Next.js 15 & Supabase (DevMatrix / CrewAI)", votes_count: 94 },
+        { id: "opt_2", text: "LangGraph / LangChain State Machines", votes_count: 52 },
+        { id: "opt_3", text: "Direct LLM API Structured Function Calling (OpenAI / Gemini 2.5)", votes_count: 26 },
+        { id: "opt_4", text: "Local Offline Models via Ollama / vLLM", votes_count: 12 },
+      ],
+    },
     comments: [
       {
         id: "c_001",
@@ -239,6 +269,18 @@ Let me know if you need help architecting your cloud infrastructure!`,
     comments_count: 0,
     created_at: "2026-10-14T14:15:00Z",
     user_has_liked: true,
+    poll: {
+      id: "poll_002",
+      post_id: "post_003",
+      question: "Primary Production Deployment Target for Agent Microservices:",
+      total_votes: 112,
+      options: [
+        { id: "opt_2_1", text: "Self-Hosted Dokploy / Coolify on VPS (Hetzner / DigitalOcean)", votes_count: 68 },
+        { id: "opt_2_2", text: "AWS ECS / Fargate Containers", votes_count: 24 },
+        { id: "opt_2_3", text: "Vercel / Cloudflare Workers Edge", votes_count: 15 },
+        { id: "opt_2_4", text: "Google Cloud Run / GKE", votes_count: 5 },
+      ],
+    },
   },
 ];
 
@@ -513,3 +555,435 @@ export const MOCK_AI_KNOWLEDGE: AIKnowledgeItem[] = [
     source_type: "lesson",
   },
 ];
+
+// ============================================================================
+// Pillar 2: Gamification Demo Data
+// ============================================================================
+
+export const MOCK_STREAKS: Record<string, Streak> = {
+  usr_admin_001: {
+    member_id: "usr_admin_001",
+    current_streak_days: 14,
+    longest_streak_days: 28,
+    last_activity_date: "2026-10-16",
+    fire_active: true,
+  },
+  usr_sarah_002: {
+    member_id: "usr_sarah_002",
+    current_streak_days: 9,
+    longest_streak_days: 15,
+    last_activity_date: "2026-10-16",
+    fire_active: true,
+  },
+  usr_marcus_003: {
+    member_id: "usr_marcus_003",
+    current_streak_days: 5,
+    longest_streak_days: 12,
+    last_activity_date: "2026-10-15",
+    fire_active: true,
+  },
+  usr_elena_004: {
+    member_id: "usr_elena_004",
+    current_streak_days: 3,
+    longest_streak_days: 7,
+    last_activity_date: "2026-10-16",
+    fire_active: true,
+  },
+  usr_dev_005: {
+    member_id: "usr_dev_005",
+    current_streak_days: 1,
+    longest_streak_days: 4,
+    last_activity_date: "2026-10-16",
+    fire_active: true,
+  },
+};
+
+export const MOCK_BADGES: Badge[] = [
+  {
+    id: "bdg_001",
+    title: "First Code Drop",
+    description: "Published your first technical discussion post in the community feed.",
+    icon_name: "Code2",
+    tier: "bronze",
+    requirement_type: "posts",
+    requirement_val: 1,
+  },
+  {
+    id: "bdg_002",
+    title: "7-Day Streak Master",
+    description: "Maintained an unbroken daily learning or contribution streak for 7 days.",
+    icon_name: "Flame",
+    tier: "silver",
+    requirement_type: "streak",
+    requirement_val: 7,
+  },
+  {
+    id: "bdg_003",
+    title: "Quiz Champion",
+    description: "Scored 100% on any advanced academy assessment quiz.",
+    icon_name: "Trophy",
+    tier: "gold",
+    requirement_type: "quiz",
+    requirement_val: 1,
+  },
+  {
+    id: "bdg_004",
+    title: "Certified AI Engineer",
+    description: "Completed 100% of the Masterclass and earned a verified Certificate.",
+    icon_name: "GraduationCap",
+    tier: "diamond",
+    requirement_type: "course",
+    requirement_val: 1,
+  },
+  {
+    id: "bdg_005",
+    title: "Centurion Scholar",
+    description: "Accumulated 1,000+ reputation points across community lessons & comments.",
+    icon_name: "Award",
+    tier: "silver",
+    requirement_type: "points",
+    requirement_val: 1000,
+  },
+  {
+    id: "bdg_006",
+    title: "Grandmaster Architect",
+    description: "Accumulated 3,000+ points and achieved Level 9 rank.",
+    icon_name: "Crown",
+    tier: "diamond",
+    requirement_type: "points",
+    requirement_val: 3000,
+  },
+];
+
+export const MOCK_LEADERBOARD: LeaderboardEntry[] = [
+  {
+    rank: 1,
+    member: MOCK_MEMBERS[0], // Akaash
+    points: 3450,
+    streak_days: 14,
+    level: 9,
+    courses_completed: 4,
+    badges_count: 6,
+  },
+  {
+    rank: 2,
+    member: MOCK_MEMBERS[1], // Sarah
+    points: 2180,
+    streak_days: 9,
+    level: 7,
+    courses_completed: 3,
+    badges_count: 4,
+  },
+  {
+    rank: 3,
+    member: MOCK_MEMBERS[2], // Marcus
+    points: 1420,
+    streak_days: 5,
+    level: 5,
+    courses_completed: 2,
+    badges_count: 3,
+  },
+  {
+    rank: 4,
+    member: MOCK_MEMBERS[3], // Elena
+    points: 890,
+    streak_days: 3,
+    level: 4,
+    courses_completed: 1,
+    badges_count: 2,
+  },
+  {
+    rank: 5,
+    member: MOCK_MEMBERS[4], // Dev
+    points: 340,
+    streak_days: 1,
+    level: 2,
+    courses_completed: 1,
+    badges_count: 1,
+  },
+];
+
+// ============================================================================
+// Pillar 3: Quizzes & Certificate Demo Data
+// ============================================================================
+
+export const MOCK_QUIZZES: Quiz[] = [
+  {
+    id: "quiz_mod_001",
+    course_id: "course_agentic_001",
+    module_id: "mod_01",
+    title: "Agentic Loop & Autonomous Tooling Assessment",
+    description: "Test your mastery over the Agentic Execution Cycle, default-deny safety boundaries, and structured JSON tool calling.",
+    passing_percentage: 75,
+    points_reward: 25,
+    questions: [
+      {
+        id: "q1",
+        question: "In an autonomous agentic loop, what is the primary role of the PreToolUse lifecycle hook?",
+        options: [
+          "To automatically rewrite the user's prompt in the background.",
+          "To intercept dangerous actions (e.g., git push, drop table) and enforce human confirmation (default-deny).",
+          "To measure the token latency of the language model.",
+          "To restart the browser whenever a page fails to load.",
+        ],
+        correct_index: 1,
+        explanation: "PreToolUse hooks intercept model tool invocations before execution, evaluating risk tiers and prompting for explicit human confirmation on irreversible or destructive actions.",
+      },
+      {
+        id: "q2",
+        question: "Why should Next.js server actions marked with 'use server' only export async functions?",
+        options: [
+          "Next.js bundler throws a runtime error if non-function objects, schemas, or variables are exported from 'use server' files.",
+          "Synchronous functions are deprecated in React 19.",
+          "Server actions cannot access database connections synchronously.",
+          "To allow browser localStorage to cache server results.",
+        ],
+        correct_index: 0,
+        explanation: "Next.js App Router enforces that files marked with 'use server' act as RPC boundaries and must only export async functions. Shared constants or schemas must be imported from non-'use server' modules.",
+      },
+      {
+        id: "q3",
+        question: "When multi-tenancy is implemented on a single shared Supabase database, what guarantees zero data leakage between apps?",
+        options: [
+          "Using different passwords for each table.",
+          "Strict table namespacing (app_<slug>_*) combined with Row-Level Security (RLS) enforcing auth.jwt() -> 'user_metadata' ->> 'app'.",
+          "Relying on client-side state filtering in React useEffect.",
+          "Encrypting table names with Base64.",
+        ],
+        correct_index: 1,
+        explanation: "PostgreSQL Row-Level Security (RLS) scoped to the application slug in the JWT user metadata ensures that even direct SQL queries cannot select or mutate records belonging to other tenants.",
+      },
+      {
+        id: "q4",
+        question: "What is the primary benefit of Next.js 'output: standalone' in Docker multi-stage builds?",
+        options: [
+          "It enables live WebSockets without a Node server.",
+          "It traces only the exact production files needed, creating an ultra-lightweight container (~150MB) without the full node_modules folder.",
+          "It automatically compiles TypeScript into WebAssembly.",
+          "It removes all CSS styles from production.",
+        ],
+        correct_index: 1,
+        explanation: "Standalone mode copies only the traced dependency subset into .next/standalone, allowing a tiny Node production container that starts instantaneously.",
+      },
+    ],
+  },
+  {
+    id: "quiz_mod_002",
+    course_id: "course_agentic_001",
+    module_id: "mod_02",
+    title: "RAG & Vector Retrieval Mastery Exam",
+    description: "Demonstrate your understanding of embeddings, chunking strategies, hybrid search, and hallucination reduction.",
+    passing_percentage: 80,
+    points_reward: 30,
+    questions: [
+      {
+        id: "q2_1",
+        question: "What is the most effective approach to prevent LLM hallucinations when answering domain-specific queries?",
+        options: [
+          "Increasing temperature to 1.5 for maximum creativity.",
+          "Grounding generation with cited sources and prompting the model to explicitly abstain if evidence is missing.",
+          "Prompting the model to always answer affirmatively.",
+          "Doubling the repetition penalty parameter.",
+        ],
+        correct_index: 1,
+        explanation: "Evidence-based retrieval combined with an explicit instruction to decline answering when source documents lack coverage eliminates overconfident fabrications.",
+      },
+      {
+        id: "q2_2",
+        question: "Why should chunk sizes be bounded (e.g. 300-800 tokens) in knowledge retrieval?",
+        options: [
+          "To fit within small vector database limits.",
+          "To maintain high semantic density and avoid diluting relevant keywords across vast passages.",
+          "Because embedding models reject any input longer than 100 words.",
+          "To increase the cost of API calls.",
+        ],
+        correct_index: 1,
+        explanation: "Bounded chunks ensure that cosine similarity searches retrieve high-precision excerpts without drowning relevant facts in surrounding noise.",
+      },
+    ],
+  },
+];
+
+export const MOCK_CERTIFICATES: Record<string, Certificate> = {
+  cert_ak_001: {
+    id: "cert_ak_001",
+    course_id: "course_agentic_001",
+    course_title: "Agentic AI Engineering & Autonomous Systems Masterclass",
+    member_id: "usr_admin_001",
+    recipient_name: "Akaash Sharma",
+    recipient_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    certificate_number: "CERT-AK-2026-9841",
+    issued_at: "2026-10-15T18:30:00Z",
+    verification_hash: "8f7b3c2e1d0a5e9f4b6c8d2a",
+    grade_percentage: 98,
+    instructor_name: "AKSchool Technical Advisory Board",
+  },
+};
+
+// ============================================================================
+// Pillar 4: Real-Time Social & Community Mock Data
+// ============================================================================
+
+export const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: "conv_001",
+    participant: MOCK_MEMBERS[1], // Sarah Chen
+    last_message: {
+      id: "dm_003",
+      sender_id: "usr_sarah_002",
+      receiver_id: "usr_admin_001",
+      content: "Loved your zero-hallucination query router pattern! Are you open to reviewing my RAG benchmark tomorrow?",
+      created_at: "2026-10-16T10:45:00Z",
+      is_read: false,
+    },
+    unread_count: 1,
+    messages: [
+      {
+        id: "dm_001",
+        sender_id: "usr_sarah_002",
+        receiver_id: "usr_admin_001",
+        content: "Hey Akaash! Great to connect in the AKSchool community.",
+        created_at: "2026-10-16T10:30:00Z",
+        is_read: true,
+      },
+      {
+        id: "dm_002",
+        sender_id: "usr_admin_001",
+        receiver_id: "usr_sarah_002",
+        content: "Welcome Sarah! Excited to see your work on LLM evaluation harnesses.",
+        created_at: "2026-10-16T10:38:00Z",
+        is_read: true,
+      },
+      {
+        id: "dm_003",
+        sender_id: "usr_sarah_002",
+        receiver_id: "usr_admin_001",
+        content: "Loved your zero-hallucination query router pattern! Are you open to reviewing my RAG benchmark tomorrow?",
+        created_at: "2026-10-16T10:45:00Z",
+        is_read: false,
+      },
+    ],
+  },
+  {
+    id: "conv_002",
+    participant: MOCK_MEMBERS[2], // Marcus Vance
+    last_message: {
+      id: "dm_005",
+      sender_id: "usr_marcus_003",
+      receiver_id: "usr_admin_001",
+      content: "The multi-stage standalone Docker build finished in 45s on the VPS. Zero memory leaks on Dokploy.",
+      created_at: "2026-10-16T09:12:00Z",
+      is_read: true,
+    },
+    unread_count: 0,
+    messages: [
+      {
+        id: "dm_004",
+        sender_id: "usr_admin_001",
+        receiver_id: "usr_marcus_003",
+        content: "Marcus, how did the rolling deployment test go on the production server?",
+        created_at: "2026-10-16T08:50:00Z",
+        is_read: true,
+      },
+      {
+        id: "dm_005",
+        sender_id: "usr_marcus_003",
+        receiver_id: "usr_admin_001",
+        content: "The multi-stage standalone Docker build finished in 45s on the VPS. Zero memory leaks on Dokploy.",
+        created_at: "2026-10-16T09:12:00Z",
+        is_read: true,
+      },
+    ],
+  },
+  {
+    id: "conv_003",
+    participant: {
+      id: "usr_nova_ai",
+      community_id: "comm_akschool_001",
+      user_id: "usr_nova_ai",
+      email: "nova@akstack.com",
+      full_name: "Nova AI (Study Buddy)",
+      handle: "nova_ai",
+      avatar_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80",
+      role: "admin",
+      level: 10,
+      points: 9999,
+      bio: "24/7 Autonomous Learning Assistant for AKSchool students.",
+      plan_tier: "vip",
+      created_at: "2026-01-01T00:00:00Z",
+    },
+    last_message: {
+      id: "dm_007",
+      sender_id: "usr_nova_ai",
+      receiver_id: "usr_admin_001",
+      content: "You've completed Module 1 assessments with 98% accuracy! Ready to generate your verified certificate?",
+      created_at: "2026-10-16T07:30:00Z",
+      is_read: true,
+    },
+    unread_count: 0,
+    messages: [
+      {
+        id: "dm_006",
+        sender_id: "usr_nova_ai",
+        receiver_id: "usr_admin_001",
+        content: "Hi! I am Nova AI, your dedicated study assistant. I can clarify agent patterns, review SQL schemas, and test your knowledge.",
+        created_at: "2026-10-16T07:00:00Z",
+        is_read: true,
+      },
+      {
+        id: "dm_007",
+        sender_id: "usr_nova_ai",
+        receiver_id: "usr_admin_001",
+        content: "You've completed Module 1 assessments with 98% accuracy! Ready to generate your verified certificate?",
+        created_at: "2026-10-16T07:30:00Z",
+        is_read: true,
+      },
+    ],
+  },
+];
+
+export const MOCK_EVENTS: CommunityEvent[] = [
+  {
+    id: "evt_001",
+    community_id: "comm_akschool_001",
+    title: "Weekly Office Hours & Architecture Teardown with Akaash",
+    description: "Bring your active autonomous AI workflows, codebases, and deployment configs. We'll conduct live architectural teardowns, review RAG latency bottlenecks, and debug production setups.",
+    starts_at: "2026-10-18T18:00:00Z",
+    ends_at: "2026-10-18T19:30:00Z",
+    location_type: "google_meet",
+    location_url: "https://meet.google.com/aks-arch-live",
+    host_member: MOCK_MEMBERS[0],
+    attendees_count: 142,
+    user_has_rsvped: true,
+    category: "office_hours",
+  },
+  {
+    id: "evt_002",
+    community_id: "comm_akschool_001",
+    title: "Autonomous Agent 48-Hour Hackathon: Production Loops",
+    description: "Build and deploy a full-stack autonomous AI microservice with multi-agent orchestration, verifiable tool execution, and zero-hallucination boundaries. Win $2,500 in cloud credits and VIP tier lifetime membership.",
+    starts_at: "2026-10-24T12:00:00Z",
+    ends_at: "2026-10-26T12:00:00Z",
+    location_type: "live_stream",
+    location_url: "https://school.akstack.com/live/hackathon-2026",
+    host_member: MOCK_MEMBERS[0],
+    attendees_count: 286,
+    user_has_rsvped: false,
+    category: "hackathon",
+  },
+  {
+    id: "evt_003",
+    community_id: "comm_akschool_001",
+    title: "Deep Dive Workshop: Multi-Tenant Supabase RLS & Dokploy CD",
+    description: "Marcus Vance and Sarah Chen walk through step-by-step hard isolation of database tenants, JWT claims enforcement, and zero-downtime rolling container deployments on bare-metal cloud VPS.",
+    starts_at: "2026-10-28T17:00:00Z",
+    ends_at: "2026-10-28T18:30:00Z",
+    location_type: "zoom",
+    location_url: "https://zoom.us/j/9841029412",
+    host_member: MOCK_MEMBERS[2],
+    attendees_count: 98,
+    user_has_rsvped: false,
+    category: "workshop",
+  },
+];
+

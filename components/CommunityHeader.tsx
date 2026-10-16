@@ -33,8 +33,11 @@ import {
 } from "lucide-react";
 import { MOCK_MEMBERS, MOCK_COURSES } from "@/lib/school-mock";
 import { Member, Course } from "@/lib/types";
+import { StreakBadge } from "./StreakBadge";
 import { MembershipModal } from "./MembershipModal";
 import { ProfileModal } from "./ProfileModal";
+import { DirectMessagesDrawer } from "./DirectMessagesDrawer";
+import { EventsCalendarModal } from "./EventsCalendarModal";
 import {
   CreateCourseModal,
   CreateModuleModal,
@@ -155,6 +158,8 @@ export function CommunityHeader({
 
   // In-page Direct Messages state
   const [showMessages, setShowMessages] = useState(false);
+  const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
+  const [selectedDmParticipantId, setSelectedDmParticipantId] = useState<string | undefined>(undefined);
 
   // Superadmin / Creator Quick Actions State
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -560,6 +565,9 @@ export function CommunityHeader({
                 </button>
               )}
 
+              {/* Daily Learning Streak Badge */}
+              <StreakBadge memberId={currentMember?.id || "usr_admin_001"} />
+
               {/* Direct Messages & Notifications (Only for authenticated members) */}
               {currentMember && (
                 <>
@@ -595,13 +603,15 @@ export function CommunityHeader({
                         <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
                           {[
                             {
+                              id: "usr_sarah_002",
                               name: "Sarah Chen",
-                              avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+                              avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
                               time: "12m ago",
                               preview: "Loved your zero-hallucination query router pattern! Are you open to a code review?",
                               online: true,
                             },
                             {
+                              id: "usr_marcus_003",
                               name: "Marcus Vance",
                               avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
                               time: "1h ago",
@@ -609,6 +619,7 @@ export function CommunityHeader({
                               online: true,
                             },
                             {
+                              id: "usr_nova_ai",
                               name: "Nova AI (Study Buddy)",
                               avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop&q=80",
                               time: "2h ago",
@@ -618,6 +629,11 @@ export function CommunityHeader({
                           ].map((dm, idx) => (
                             <div
                               key={idx}
+                              onClick={() => {
+                                setSelectedDmParticipantId(dm.id);
+                                setShowMessages(false);
+                                setIsMessagesDrawerOpen(true);
+                              }}
                               className="p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors flex items-start gap-3"
                             >
                               <div className="relative shrink-0">
@@ -646,9 +662,15 @@ export function CommunityHeader({
                         </div>
 
                         <div className="p-3 border-t border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950/40 text-center">
-                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
-                            View All Messages in Hub →
-                          </span>
+                          <button
+                            onClick={() => {
+                              setShowMessages(false);
+                              setIsMessagesDrawerOpen(true);
+                            }}
+                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Open Direct Messages Drawer →
+                          </button>
                         </div>
                       </div>
                     )}
@@ -1135,6 +1157,20 @@ export function CommunityHeader({
           setIsCreateCommunityOpen(false);
           window.location.href = "/admin?tab=communities";
         }}
+      />
+
+      {/* Pillar 4: Event Calendar & RSVP Modal */}
+      <EventsCalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+      />
+
+      {/* Pillar 4: 1-on-1 Direct Messages Drawer */}
+      <DirectMessagesDrawer
+        isOpen={isMessagesDrawerOpen}
+        onClose={() => setIsMessagesDrawerOpen(false)}
+        currentMember={currentMember}
+        initialParticipantId={selectedDmParticipantId}
       />
     </>
   );

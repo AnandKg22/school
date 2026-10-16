@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CommunityHeader } from "@/components/CommunityHeader";
 import { AiCopilotModal } from "@/components/AiCopilotModal";
 import { ProfileModal } from "@/components/ProfileModal";
+import { LeaderboardView } from "@/components/LeaderboardView";
 import {
   Users,
   Award,
@@ -123,9 +124,17 @@ export default function MembersPage() {
           </button>
         </div>
 
-        {/* Member Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedMembers.map((member, idx) => {
+        {/* Member Cards Grid or Leaderboard View */}
+        {activeTab === "leaderboard" ? (
+          <LeaderboardView
+            onSelectMember={(memberId) => {
+              const found = members.find((m) => m.id === memberId);
+              if (found) setSelectedMember(found);
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedMembers.map((member, idx) => {
             const isSuperAdmin = (member.role as string) === "superadmin";
             const isOwner = member.role === "owner";
             const isAdmin = member.role === "admin";
@@ -146,11 +155,6 @@ export default function MembersPage() {
                         alt={member.full_name}
                         className="w-14 h-14 rounded-full object-cover ring-2 ring-blue-600/30 shadow-md group-hover:scale-105 transition-transform"
                       />
-                      {activeTab === "leaderboard" && (
-                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-emerald-500 text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
-                          #{idx + 1}
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex flex-col items-end gap-1">
@@ -203,7 +207,8 @@ export default function MembersPage() {
             );
           })}
         </div>
-      </main>
+      )}
+    </main>
 
       {/* Member Profile Modal with Activity Heatmap */}
       {selectedMember && (
