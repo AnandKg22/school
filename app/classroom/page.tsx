@@ -26,7 +26,8 @@ import {
   Plus,
   FileQuestion,
   GraduationCap,
-  Award
+  Award,
+  CreditCard,
 } from "lucide-react";
 import { MOCK_COURSES, MOCK_MEMBERS, MOCK_QUIZZES, MOCK_CERTIFICATES } from "@/lib/school-mock";
 import { Course, CourseLesson, CourseModule, Member, Quiz, Certificate } from "@/lib/types";
@@ -259,7 +260,9 @@ export default function ClassroomPage() {
     }
   };
 
-  const isLocked = activeCourse.required_tier === "pro" && (!currentMember || currentMember.plan_tier === "free");
+  const isLocked =
+    (activeCourse.required_tier === "pro" && (!currentMember || currentMember.plan_tier === "free")) ||
+    (activeCourse.required_tier === "vip" && (!currentMember || currentMember.plan_tier !== "vip"));
 
   const totalLessonsCount =
     activeCourse.modules?.reduce((acc, m) => acc + m.lessons.length, 0) || 0;
@@ -352,17 +355,32 @@ export default function ClassroomPage() {
                   <div className="w-16 h-16 rounded-3xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-4 border border-blue-500/30">
                     <Lock className="w-8 h-8" />
                   </div>
-                  <h3 className="text-lg font-bold">This Course Requires Pro Membership</h3>
+                  <h3 className="text-lg font-bold">
+                    This Course Requires {activeCourse.required_tier.toUpperCase()} Membership
+                  </h3>
                   <p className="text-xs text-slate-400 max-w-md mt-1 mb-6">
-                    Unlock full access to {activeCourse.title}, downloadable code blueprints, and priority peer reviews.
+                    Unlock full access to {activeCourse.title}, downloadable production blueprints, interactive quizzes, and verified certification.
                   </p>
-                  <button
-                    onClick={() => setIsMembershipOpen(true)}
-                    className="px-6 py-3 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2"
-                  >
-                    <Zap className="w-4 h-4" />
-                    <span>Upgrade to Pro Tier (₹999/mo)</span>
-                  </button>
+                  
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={() => setIsMembershipOpen(true)}
+                      className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>Upgrade Membership ({activeCourse.required_tier === "vip" ? "$99/mo" : "$29/mo"})</span>
+                    </button>
+
+                    {activeCourse.pricing?.allow_standalone_purchase !== false && (
+                      <button
+                        onClick={() => setIsMembershipOpen(true)}
+                        className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all flex items-center gap-2"
+                      >
+                        <CreditCard className="w-4 h-4 text-emerald-400" />
+                        <span>Buy Course Standalone (${activeCourse.pricing?.one_time_price || 149})</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 /* Active Video Player */
@@ -704,6 +722,7 @@ export default function ClassroomPage() {
           onClose={() => setIsMembershipOpen(false)}
           currentMember={currentMember}
           onUpdateTier={handleUpdateTier}
+          courseToUnlock={isLocked ? activeCourse : null}
         />
       )}
 

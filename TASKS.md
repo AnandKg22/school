@@ -56,11 +56,13 @@
 
 ## Next Phased Implementation Roadmap (Advanced Feature Pillars)
 
-- [ ] **Pillar 1: Monetization & Subscription Engine**
-  - [ ] Schema: Create `app_school_subscriptions` and `app_school_invoices` in migration `004`.
-  - [ ] Stripe API: Implement `/api/v1/billing/checkout` & `/api/v1/billing/portal`.
-  - [ ] Webhook: Implement `/api/v1/billing/webhook` handling subscription lifecycles.
-  - [ ] UI: Upgrade `MembershipModal.tsx` with live checkout triggers and receipt views.
+- [x] **Pillar 1: Monetization & Subscription Engine**
+  - [x] Schema: Create `app_school_payment_gateways`, `app_school_course_pricing`, `app_school_subscriptions`, `app_school_course_purchases`, and `app_school_invoices` in migration `006_monetization_multi_gateway.sql`.
+  - [x] Multi-Gateway Architecture: SuperAdmin gateway manager supporting Stripe Only, PayPal Only, or Both Gateways Active with live/sandbox switches (`/api/v1/admin/gateways`).
+  - [x] Custom Course Pricing Studio: Manage standalone one-time licenses, monthly lab fees, or yearly passes per course (`/api/v1/courses/[id]/pricing`).
+  - [x] Unified Checkout Session Engine: Create checkout sessions for subscriptions and course purchases with Stripe / PayPal routing (`/api/v1/billing/checkout`).
+  - [x] Webhook Listeners: Real-time listeners for Stripe (`/api/v1/billing/webhook/stripe`) and PayPal (`/api/v1/billing/webhook/paypal`).
+  - [x] UI: Upgraded `MembershipModal.tsx` with monthly/yearly interval switcher (2 months free), dual gateway selection, locked course checkout hero, and invoice receipt history.
 
 - [x] **Pillar 2: Gamification & Viral Engagement**
   - [x] Schema: Create `app_school_streaks`, `app_school_badges`, and `app_school_member_badges` in migration `004_gamification_and_quizzes.sql`.

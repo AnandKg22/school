@@ -26,9 +26,31 @@ import {
   Lock,
   Unlock,
   ExternalLink,
+  CreditCard,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Zap,
 } from "lucide-react";
-import { MOCK_COMMUNITY, MOCK_MEMBERS, MOCK_AI_KNOWLEDGE, MOCK_PLANS, MOCK_COURSES } from "@/lib/school-mock";
-import { Member, AIKnowledgeItem, Course, CourseModule, CourseLesson, Community } from "@/lib/types";
+import {
+  MOCK_COMMUNITY,
+  MOCK_MEMBERS,
+  MOCK_AI_KNOWLEDGE,
+  MOCK_PLANS,
+  MOCK_COURSES,
+  MOCK_GATEWAY_CONFIG,
+  MOCK_COURSE_PRICING,
+} from "@/lib/school-mock";
+import {
+  Member,
+  AIKnowledgeItem,
+  Course,
+  CourseModule,
+  CourseLesson,
+  Community,
+  PaymentGatewayConfig,
+  CoursePricing,
+} from "@/lib/types";
 import {
   CreateCourseModal,
   CreateModuleModal,
@@ -90,7 +112,40 @@ export default function AdminConsolePage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [allowedOrigins, setAllowedOrigins] = useState("https://akstack.com, https://preview.webflow.io");
 
+  // Multi-Gateway & Monetization State
+  const [gatewayConfig, setGatewayConfig] = useState<PaymentGatewayConfig>(MOCK_GATEWAY_CONFIG);
+  const [activeGatewaysChoice, setActiveGatewaysChoice] = useState<"stripe" | "paypal" | "both">(MOCK_GATEWAY_CONFIG.active_gateways);
+  const [stripePublishableKey, setStripePublishableKey] = useState(MOCK_GATEWAY_CONFIG.stripe_publishable_key);
+  const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
+  const [stripeLiveMode, setStripeLiveMode] = useState(MOCK_GATEWAY_CONFIG.stripe_live_mode);
+  const [paypalClientId, setPaypalClientId] = useState(MOCK_GATEWAY_CONFIG.paypal_client_id);
+  const [paypalSecret, setPaypalSecret] = useState("");
+  const [paypalWebhookId, setPaypalWebhookId] = useState(MOCK_GATEWAY_CONFIG.paypal_webhook_id);
+  const [paypalSandboxMode, setPaypalSandboxMode] = useState(MOCK_GATEWAY_CONFIG.paypal_sandbox_mode);
+  const [showStripeSecret, setShowStripeSecret] = useState(false);
+  const [showPaypalSecret, setShowPaypalSecret] = useState(false);
+  const [gatewaySaved, setGatewaySaved] = useState(false);
+  const [coursePricingMap, setCoursePricingMap] = useState<Record<string, CoursePricing>>(MOCK_COURSE_PRICING);
+  const [savingCourseId, setSavingCourseId] = useState<string | null>(null);
+
   useEffect(() => {
+    // Fetch Gateway Config
+    fetch("/api/v1/admin/gateways")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.config) {
+          setGatewayConfig(data.config);
+          setActiveGatewaysChoice(data.config.active_gateways);
+          setStripePublishableKey(data.config.stripe_publishable_key || "");
+          setStripeLiveMode(data.config.stripe_live_mode);
+          setPaypalClientId(data.config.paypal_client_id || "");
+          setPaypalWebhookId(data.config.paypal_webhook_id || "");
+          setPaypalSandboxMode(data.config.paypal_sandbox_mode);
+        }
+      })
+      .catch((err) => console.warn("Could not load gateways:", err));
+
     // 0. Check tab parameter from URL
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -321,6 +376,74 @@ export default function AdminConsolePage() {
       }
     } catch (err) {
       console.warn("Could not sync report dismissal to server:", err);
+    }
+  };
+
+  const handleSaveGateways = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/v1/admin/gateways", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          active_gateways: activeGatewaysChoice,
+          stripe_enabled: activeGatewaysChoice === "stripe" || activeGatewaysChoice === "both",
+          stripe_publishable_key: stripePublishableKey,
+          stripe_secret_key: stripeSecretKey || undefined,
+          stripe_webhook_secret: stripeWebhookSecret || undefined,
+          stripe_live_mode: stripeLiveMode,
+          paypal_enabled: activeGatewaysChoice === "paypal" || activeGatewaysChoice === "both",
+          paypal_client_id: paypalClientId,
+          paypal_secret: paypalSecret || undefined,
+          paypal_webhook_id: paypalWebhookId || undefined,
+          paypal_sandbox_mode: paypalSandboxMode,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.config) {
+        setGatewayConfig(data.config);
+        setGatewaySaved(true);
+        setTimeout(() => setGatewaySaved(false), 3000);
+      }
+    } catch (err) {
+      console.warn("Could not save gateway settings:", err);
+    }
+  };
+
+  const handleSaveCoursePricing = async (courseId: string) => {
+    setSavingCourseId(courseId);
+    try {
+      const current = coursePricingMap[courseId] || {
+        course_id: courseId,
+        pricing_type: "hybrid",
+        one_time_price: 149,
+        monthly_price: 19,
+        yearly_price: 190,
+        required_tier: "pro",
+        allow_standalone_purchase: true,
+        currency: "USD",
+      };
+
+      const res = await fetch(`/api/v1/courses/${courseId}/pricing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(current),
+      });
+      const data = await res.json();
+      if (data.success && data.pricing) {
+        setCoursePricingMap((prev) => ({ ...prev, [courseId]: data.pricing }));
+        setCourses((prev) =>
+          prev.map((c) =>
+            c.id === courseId
+              ? { ...c, pricing: data.pricing, required_tier: data.pricing.required_tier }
+              : c
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("Could not save course pricing:", err);
+    } finally {
+      setTimeout(() => setSavingCourseId(null), 1000);
     }
   };
 
@@ -1053,50 +1176,481 @@ export default function AdminConsolePage() {
           </div>
         )}
 
-        {/* Tab 5: Monetisation & Plans */}
+        {/* Tab 5: Monetisation, Gateways & Custom Course Pricing */}
         {activeTab === "plans" && (
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs">
-            <h2 className="text-base font-extrabold text-[#0F172A] dark:text-white mb-1">
-              Membership Plans & Entitlements
-            </h2>
-            <p className="text-xs text-slate-500 mb-6">
-              Active pricing tiers configured in the internal entitlement ledger
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
-              {MOCK_PLANS.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="p-5 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 flex flex-col justify-between"
-                >
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-                      Active Tier
+          <div className="space-y-8">
+            {/* SuperAdmin Gateway Configuration */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      SuperAdmin Payment Architecture
                     </span>
-                    <h3 className="text-base font-bold text-[#0F172A] dark:text-white mt-2">{plan.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
-                    <div className="my-4">
-                      <span className="text-2xl font-black text-[#0F172A] dark:text-white">
-                        {plan.price_monthly === 0 ? "Free" : `₹${plan.price_monthly}`}
-                      </span>
-                      <span className="text-xs text-slate-500 ml-1">/month</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Gateways Active
+                    </span>
+                  </div>
+                  <h2 className="text-base font-extrabold text-[#0F172A] dark:text-white">
+                    Multi-Gateway Payment Controller (Stripe & PayPal)
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Configure API keys, webhooks, and gateway availability. You can enable Stripe, PayPal, or Both so students can choose their preferred checkout method.
+                  </p>
+                </div>
+
+                {gatewaySaved && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800 animate-in fade-in">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span>Gateway Credentials Verified & Saved</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Gateway Selection Mode */}
+              <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                  Active Gateway Mode (Client Checkout Experience):
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: "both",
+                      label: "Both Gateways (Recommended)",
+                      desc: "Students can choose either Stripe (Card/Apple Pay) or PayPal at checkout",
+                      icon: Zap,
+                    },
+                    {
+                      id: "stripe",
+                      label: "Stripe Only",
+                      desc: "Only credit/debit card, Apple Pay, and Google Pay through Stripe",
+                      icon: CreditCard,
+                    },
+                    {
+                      id: "paypal",
+                      label: "PayPal Only",
+                      desc: "Only PayPal balance, Pay in 4, and Venmo through PayPal",
+                      icon: DollarSign,
+                    },
+                  ].map((mode) => {
+                    const isSelected = activeGatewaysChoice === mode.id;
+                    const Icon = mode.icon;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setActiveGatewaysChoice(mode.id as any)}
+                        className={`p-3.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? "bg-blue-50 dark:bg-blue-950/40 border-blue-600 ring-2 ring-blue-600/20 text-[#0F172A] dark:text-white"
+                            : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className={`w-4 h-4 ${isSelected ? "text-blue-600" : "text-slate-400"}`} />
+                          <span className="text-xs font-bold">{mode.label}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight">{mode.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Gateway Cards Form */}
+              <form onSubmit={handleSaveGateways} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  
+                  {/* Stripe Card */}
+                  <div className="p-5 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                          S
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-bold text-[#0F172A] dark:text-white">
+                            Stripe Direct Checkout & Subscriptions
+                          </h3>
+                          <span className="text-[10px] text-slate-400">Cards, Apple Pay, Google Pay, SEPA</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 cursor-pointer">
+                          <span>Live Mode</span>
+                          <input
+                            type="checkbox"
+                            checked={stripeLiveMode}
+                            onChange={(e) => setStripeLiveMode(e.target.checked)}
+                            className="w-3.5 h-3.5 text-blue-600 rounded"
+                          />
+                        </label>
+                      </div>
                     </div>
 
-                    <ul className="space-y-1.5 text-xs text-[#475569] dark:text-slate-300">
-                      {plan.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                          <span>{feat}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          Publishable Key
+                        </label>
+                        <input
+                          type="text"
+                          value={stripePublishableKey}
+                          onChange={(e) => setStripePublishableKey(e.target.value)}
+                          placeholder="pk_live_... or pk_test_..."
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                            Secret Key
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowStripeSecret(!showStripeSecret)}
+                            className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                          >
+                            {showStripeSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            <span>{showStripeSecret ? "Hide" : "Reveal / Edit"}</span>
+                          </button>
+                        </div>
+                        <input
+                          type={showStripeSecret ? "text" : "password"}
+                          value={stripeSecretKey}
+                          onChange={(e) => setStripeSecretKey(e.target.value)}
+                          placeholder={gatewayConfig.stripe_secret_key_masked || "sk_live_... or sk_test_..."}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          Webhook Signing Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={stripeWebhookSecret}
+                          onChange={(e) => setStripeWebhookSecret(e.target.value)}
+                          placeholder={gatewayConfig.stripe_webhook_secret_masked || "whsec_..."}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          Webhook endpoint: <code className="text-blue-600">https://school.akstack.com/api/v1/billing/webhook/stripe</code>
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-400">
-                    Subscribers: <strong className="text-[#0F172A] dark:text-white">{plan.id === "free" ? "1,064" : "184"}</strong>
+                  {/* PayPal Card */}
+                  <div className="p-5 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs">
+                          PP
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-bold text-[#0F172A] dark:text-white">
+                            PayPal Express & Subscriptions
+                          </h3>
+                          <span className="text-[10px] text-slate-400">PayPal Wallet, Pay in 4, International</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 cursor-pointer">
+                          <span>Sandbox Mode</span>
+                          <input
+                            type="checkbox"
+                            checked={paypalSandboxMode}
+                            onChange={(e) => setPaypalSandboxMode(e.target.checked)}
+                            className="w-3.5 h-3.5 text-amber-600 rounded"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          Client ID
+                        </label>
+                        <input
+                          type="text"
+                          value={paypalClientId}
+                          onChange={(e) => setPaypalClientId(e.target.value)}
+                          placeholder="AU_PayPal_Client_Id_..."
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                            Client Secret
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowPaypalSecret(!showPaypalSecret)}
+                            className="text-[10px] font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+                          >
+                            {showPaypalSecret ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            <span>{showPaypalSecret ? "Hide" : "Reveal / Edit"}</span>
+                          </button>
+                        </div>
+                        <input
+                          type={showPaypalSecret ? "text" : "password"}
+                          value={paypalSecret}
+                          onChange={(e) => setPaypalSecret(e.target.value)}
+                          placeholder={gatewayConfig.paypal_secret_masked || "EC_Secret_..."}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">
+                          Webhook ID
+                        </label>
+                        <input
+                          type="text"
+                          value={paypalWebhookId}
+                          onChange={(e) => setPaypalWebhookId(e.target.value)}
+                          placeholder="WH-94829103829..."
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-mono"
+                        />
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          Webhook endpoint: <code className="text-amber-600">https://school.akstack.com/api/v1/billing/webhook/paypal</code>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
+
+                <div className="flex items-center justify-end">
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Save & Verify Gateway Settings</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Course Custom Pricing Studio */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Course-Specific Pricing Studio
+                  </span>
+                  <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white mt-1">
+                    Custom Course Pricing & Gating Controls
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Set one-time lifetime license fees, monthly lab charges, or yearly passes per course.
+                  </p>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Total Courses: <strong className="text-slate-900 dark:text-white">{courses.length}</strong>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {courses.map((course) => {
+                  const pricing = coursePricingMap[course.id] || {
+                    course_id: course.id,
+                    pricing_type: "hybrid",
+                    one_time_price: 149,
+                    monthly_price: 19,
+                    yearly_price: 190,
+                    required_tier: course.required_tier,
+                    allow_standalone_purchase: true,
+                    currency: "USD",
+                  };
+                  const isSaving = savingCourseId === course.id;
+
+                  return (
+                    <div
+                      key={course.id}
+                      className="p-5 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900/60 border border-[#E2E8F0] dark:border-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-4 min-w-[280px]">
+                        <img
+                          src={course.cover_url}
+                          alt={course.title}
+                          className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                        />
+                        <div>
+                          <h4 className="text-xs font-bold text-[#0F172A] dark:text-white line-clamp-1">
+                            {course.title}
+                          </h4>
+                          <span className="text-[11px] text-slate-400">
+                            {course.total_lessons} lessons • Required Tier:{" "}
+                            <span className="font-bold text-blue-600 uppercase">
+                              {pricing.required_tier}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Pricing Form Fields */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 block mb-1">
+                            Tier Gate
+                          </label>
+                          <select
+                            value={pricing.required_tier}
+                            onChange={(e: any) =>
+                              setCoursePricingMap((prev) => ({
+                                ...prev,
+                                [course.id]: {
+                                  ...pricing,
+                                  required_tier: e.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white uppercase font-bold"
+                          >
+                            <option value="free">FREE</option>
+                            <option value="pro">PRO</option>
+                            <option value="vip">VIP</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 block mb-1">
+                            One-Time ($)
+                          </label>
+                          <input
+                            type="number"
+                            value={pricing.one_time_price}
+                            onChange={(e) =>
+                              setCoursePricingMap((prev) => ({
+                                ...prev,
+                                [course.id]: {
+                                  ...pricing,
+                                  one_time_price: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 block mb-1">
+                            Monthly ($/mo)
+                          </label>
+                          <input
+                            type="number"
+                            value={pricing.monthly_price}
+                            onChange={(e) =>
+                              setCoursePricingMap((prev) => ({
+                                ...prev,
+                                [course.id]: {
+                                  ...pricing,
+                                  monthly_price: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-bold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500 block mb-1">
+                            Yearly ($/yr)
+                          </label>
+                          <input
+                            type="number"
+                            value={pricing.yearly_price}
+                            onChange={(e) =>
+                              setCoursePricingMap((prev) => ({
+                                ...prev,
+                                [course.id]: {
+                                  ...pricing,
+                                  yearly_price: Number(e.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#0F172A] dark:text-white font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={pricing.allow_standalone_purchase}
+                            onChange={(e) =>
+                              setCoursePricingMap((prev) => ({
+                                ...prev,
+                                [course.id]: {
+                                  ...pricing,
+                                  allow_standalone_purchase: e.target.checked,
+                                },
+                              }))
+                            }
+                            className="w-3.5 h-3.5 text-blue-600 rounded"
+                          />
+                          <span>Standalone Purchase</span>
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSaveCoursePricing(course.id)}
+                          disabled={isSaving}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shrink-0 flex items-center gap-1"
+                        >
+                          {isSaving ? (
+                            <span>Saving...</span>
+                          ) : (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Save Pricing</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Membership Tier Cards Reference */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-[#E2E8F0] dark:border-slate-700 shadow-2xs space-y-4">
+              <h3 className="text-sm font-bold text-[#0F172A] dark:text-white">
+                Global Membership Tier Entitlements
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {MOCK_PLANS.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex flex-col justify-between"
+                  >
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {plan.name}
+                      </span>
+                      <p className="text-xs text-slate-500 mt-2 mb-3">{plan.description}</p>
+                      <p className="text-xl font-black text-slate-900 dark:text-white">
+                        {plan.price_monthly === 0 ? "Free" : `$${plan.price_monthly}/mo`}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-400">
+                      Subscribers: <strong className="text-slate-900 dark:text-white">{plan.id === "free" ? "1,064" : "184"}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

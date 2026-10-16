@@ -15,6 +15,11 @@ import {
   Conversation,
   DirectMessage,
   CommunityEvent,
+  PaymentGatewayConfig,
+  CoursePricing,
+  Subscription,
+  Invoice,
+  CoursePurchase,
 } from "./types";
 
 export const MOCK_COMMUNITY: Community = {
@@ -296,6 +301,16 @@ export const MOCK_COURSES: Course[] = [
     required_tier: "free",
     total_lessons: 4,
     sort_order: 1,
+    pricing: {
+      course_id: "course_agentic_01",
+      pricing_type: "tier_only",
+      one_time_price: 0,
+      monthly_price: 0,
+      yearly_price: 0,
+      required_tier: "free",
+      allow_standalone_purchase: false,
+      currency: "USD",
+    },
     modules: [
       {
         id: "mod_01",
@@ -424,6 +439,16 @@ Learn how to structure schema-defined function calls and handle JSON parse error
     required_tier: "pro",
     total_lessons: 4,
     sort_order: 2,
+    pricing: {
+      course_id: "course_saas_02",
+      pricing_type: "hybrid",
+      one_time_price: 149,
+      monthly_price: 19,
+      yearly_price: 190,
+      required_tier: "pro",
+      allow_standalone_purchase: true,
+      currency: "USD",
+    },
     modules: [
       {
         id: "mod_saas_01",
@@ -488,6 +513,66 @@ Learn how to safely host multi-tenant communities on a single PostgreSQL instanc
             duration_minutes: 25,
             is_free_preview: false,
             sort_order: 1,
+            is_completed: false,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "course_vip_03",
+    community_id: "comm_akschool_001",
+    title: "Executive Autonomous Systems & Enterprise Architecture Mastery",
+    slug: "executive-autonomous-systems",
+    description: "Design multi-million dollar agentic topologies, cross-model governance councils, custom MCP sidecars, and proprietary fine-tuned inference engines.",
+    cover_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+    is_locked: true,
+    required_tier: "vip",
+    total_lessons: 3,
+    sort_order: 3,
+    pricing: {
+      course_id: "course_vip_03",
+      pricing_type: "hybrid",
+      one_time_price: 299,
+      monthly_price: 39,
+      yearly_price: 390,
+      required_tier: "vip",
+      allow_standalone_purchase: true,
+      currency: "USD",
+    },
+    modules: [
+      {
+        id: "mod_vip_01",
+        course_id: "course_vip_03",
+        title: "Module 1: Enterprise Agent Topologies & Defense in Depth",
+        sort_order: 1,
+        lessons: [
+          {
+            id: "les_vip_01",
+            module_id: "mod_vip_01",
+            title: "Lesson 1.1: Multi-Agent Council Topologies & Consensus Voting",
+            slug: "multi-agent-councils",
+            content: `### High-Stakes Decision Councils
+
+In mission-critical enterprise environments, a single LLM response cannot be trusted blindly. We construct a 5-model heterogeneous advisory council with blind peer reviews and mathematical consensus scoring.`,
+            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            duration_minutes: 32,
+            is_free_preview: false,
+            sort_order: 1,
+            is_completed: false,
+          },
+          {
+            id: "les_vip_02",
+            module_id: "mod_vip_01",
+            title: "Lesson 1.2: Hard Sandboxing & Cryptographic Execution Attestation",
+            slug: "cryptographic-execution-attestation",
+            content: `### Uncompromising Execution Safety
+
+Enforce default-deny hooks on all agent tool outputs using HMAC-signed tokens, automated rollback snapshots, and tamper-proof audit trails.`,
+            video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            duration_minutes: 28,
+            is_free_preview: false,
+            sort_order: 2,
             is_completed: false,
           },
         ],
@@ -986,4 +1071,169 @@ export const MOCK_EVENTS: CommunityEvent[] = [
     category: "workshop",
   },
 ];
+
+// ============================================================================
+// Pillar 1: Multi-Gateway Monetization & Course Pricing Mock Data
+// ============================================================================
+
+export const MOCK_GATEWAY_CONFIG: PaymentGatewayConfig = {
+  community_id: "comm_akschool_001",
+  active_gateways: "both", // "stripe" | "paypal" | "both"
+  stripe_enabled: true,
+  stripe_publishable_key: "pk_test_51O9xAkSchoolCommunityPubLiveTest_0923",
+  stripe_secret_key_masked: "sk_test_••••••••••••••••••••••••••••••••••••••••",
+  stripe_webhook_secret_masked: "whsec_••••••••••••••••••••••••••••••••••••",
+  stripe_live_mode: false,
+  stripe_connected: true,
+  paypal_enabled: true,
+  paypal_client_id: "AU_PayPal_AKSchool_LiveSandbox_Client_92812",
+  paypal_secret_masked: "EC_••••••••••••••••••••••••••••••••••••••••",
+  paypal_webhook_id: "WH-94829103829102-SANDBOX",
+  paypal_sandbox_mode: true,
+  paypal_connected: true,
+  currency: "USD",
+  updated_at: "2026-10-16T08:00:00Z",
+};
+
+export const MOCK_COURSE_PRICING: Record<string, CoursePricing> = {
+  course_agentic_01: {
+    course_id: "course_agentic_01",
+    pricing_type: "tier_only",
+    one_time_price: 0,
+    monthly_price: 0,
+    yearly_price: 0,
+    required_tier: "free",
+    allow_standalone_purchase: false,
+    currency: "USD",
+  },
+  course_saas_02: {
+    course_id: "course_saas_02",
+    pricing_type: "hybrid",
+    one_time_price: 149,
+    monthly_price: 19,
+    yearly_price: 190,
+    required_tier: "pro",
+    allow_standalone_purchase: true,
+    currency: "USD",
+  },
+  course_vip_03: {
+    course_id: "course_vip_03",
+    pricing_type: "hybrid",
+    one_time_price: 299,
+    monthly_price: 39,
+    yearly_price: 390,
+    required_tier: "vip",
+    allow_standalone_purchase: true,
+    currency: "USD",
+  },
+};
+
+export const MOCK_SUBSCRIPTIONS: Subscription[] = [
+  {
+    id: "sub_001",
+    community_id: "comm_akschool_001",
+    member_id: "usr_admin_001",
+    plan_tier: "vip",
+    billing_interval: "year",
+    amount: 990,
+    currency: "USD",
+    status: "active",
+    current_period_start: "2026-01-01T00:00:00Z",
+    current_period_end: "2027-01-01T00:00:00Z",
+    cancel_at_period_end: false,
+    provider: "stripe",
+    provider_subscription_id: "sub_stripe_vip_founder_9921",
+    created_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "sub_002",
+    community_id: "comm_akschool_001",
+    member_id: "usr_sarah_002",
+    plan_tier: "pro",
+    billing_interval: "month",
+    amount: 29,
+    currency: "USD",
+    status: "active",
+    current_period_start: "2026-10-01T00:00:00Z",
+    current_period_end: "2026-11-01T00:00:00Z",
+    cancel_at_period_end: false,
+    provider: "paypal",
+    provider_subscription_id: "I-PAYPAL-PRO-MONTHLY-8832",
+    created_at: "2026-09-01T00:00:00Z",
+  },
+  {
+    id: "sub_003",
+    community_id: "comm_akschool_001",
+    member_id: "usr_marcus_003",
+    plan_tier: "pro",
+    billing_interval: "year",
+    amount: 290,
+    currency: "USD",
+    status: "active",
+    current_period_start: "2026-06-15T00:00:00Z",
+    current_period_end: "2027-06-15T00:00:00Z",
+    cancel_at_period_end: false,
+    provider: "stripe",
+    provider_subscription_id: "sub_stripe_pro_annual_4102",
+    created_at: "2026-06-15T00:00:00Z",
+  },
+];
+
+export const MOCK_COURSE_PURCHASES: CoursePurchase[] = [
+  {
+    id: "pur_001",
+    community_id: "comm_akschool_001",
+    member_id: "usr_priya_004",
+    course_id: "course_saas_02",
+    purchase_type: "one_time",
+    amount: 149,
+    currency: "USD",
+    provider: "stripe",
+    provider_payment_id: "pi_stripe_one_time_course_4892",
+    created_at: "2026-10-02T14:20:00Z",
+  },
+];
+
+export const MOCK_INVOICES: Invoice[] = [
+  {
+    id: "inv_001",
+    invoice_number: "INV-2026-00104",
+    member_id: "usr_sarah_002",
+    subscription_id: "sub_002",
+    item_description: "Pro Creator Membership (Monthly)",
+    amount: 29,
+    currency: "USD",
+    status: "paid",
+    provider: "paypal",
+    receipt_url: "https://school.akstack.com/invoices/inv-2026-00104.pdf",
+    created_at: "2026-10-01T00:00:00Z",
+  },
+  {
+    id: "inv_002",
+    invoice_number: "INV-2026-00089",
+    member_id: "usr_marcus_003",
+    subscription_id: "sub_003",
+    item_description: "Pro Creator Membership (Annual - 2 Months Free)",
+    amount: 290,
+    currency: "USD",
+    status: "paid",
+    provider: "stripe",
+    receipt_url: "https://school.akstack.com/invoices/inv-2026-00089.pdf",
+    created_at: "2026-06-15T00:00:00Z",
+  },
+  {
+    id: "inv_003",
+    invoice_number: "INV-2026-00118",
+    member_id: "usr_priya_004",
+    course_id: "course_saas_02",
+    item_description: "Full-Stack AI Application Engineering (Lifetime Course License)",
+    amount: 149,
+    currency: "USD",
+    status: "paid",
+    provider: "stripe",
+    receipt_url: "https://school.akstack.com/invoices/inv-2026-00118.pdf",
+    created_at: "2026-10-02T14:20:00Z",
+  },
+];
+
 

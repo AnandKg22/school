@@ -131,6 +131,7 @@ export interface Course {
   total_lessons: number;
   sort_order: number;
   modules?: CourseModule[];
+  pricing?: CoursePricing;
 }
 
 export interface CourseModule {
@@ -254,3 +255,89 @@ export interface Certificate {
   grade_percentage: number;
   instructor_name: string;
 }
+
+// ============================================================================
+// Pillar 1: Monetization, Multi-Gateway & Course-Specific Pricing
+// ============================================================================
+
+export type PaymentGatewayProvider = "stripe" | "paypal" | "both";
+export type BillingInterval = "month" | "year" | "one_time";
+export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "unpaid";
+export type CoursePricingType = "tier_only" | "one_time" | "subscription" | "hybrid";
+
+export interface PaymentGatewayConfig {
+  community_id: string;
+  active_gateways: PaymentGatewayProvider;
+  stripe_enabled: boolean;
+  stripe_publishable_key: string;
+  stripe_secret_key_masked: string;
+  stripe_webhook_secret_masked: string;
+  stripe_live_mode: boolean;
+  stripe_connected: boolean;
+  paypal_enabled: boolean;
+  paypal_client_id: string;
+  paypal_secret_masked: string;
+  paypal_webhook_id: string;
+  paypal_sandbox_mode: boolean;
+  paypal_connected: boolean;
+  currency: string;
+  updated_at: string;
+}
+
+export interface CoursePricing {
+  course_id: string;
+  pricing_type: CoursePricingType;
+  one_time_price: number;
+  monthly_price: number;
+  yearly_price: number;
+  required_tier: PlanTier;
+  allow_standalone_purchase: boolean;
+  currency: string;
+}
+
+export interface Subscription {
+  id: string;
+  community_id: string;
+  member_id: string;
+  plan_tier: PlanTier;
+  billing_interval: BillingInterval;
+  amount: number;
+  currency: string;
+  status: SubscriptionStatus;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  provider: "stripe" | "paypal";
+  provider_subscription_id: string;
+  created_at: string;
+}
+
+export interface CoursePurchase {
+  id: string;
+  community_id: string;
+  member_id: string;
+  course_id: string;
+  purchase_type: "one_time" | "monthly" | "yearly";
+  amount: number;
+  currency: string;
+  provider: "stripe" | "paypal";
+  provider_payment_id: string;
+  expires_at?: string;
+  created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  member_id: string;
+  subscription_id?: string;
+  course_id?: string;
+  item_description: string;
+  amount: number;
+  currency: string;
+  status: "paid" | "open" | "void";
+  provider: "stripe" | "paypal";
+  receipt_url?: string;
+  created_at: string;
+}
+
