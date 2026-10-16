@@ -23,6 +23,12 @@ import {
   AnalyticsSummary,
   GTMInteractionLog,
   ManagerPermission,
+  AffiliateProgramConfig,
+  AffiliatePartner,
+  ReferralConversion,
+  EmailBroadcast,
+  BroadcastTemplate,
+  LiveSessionRoom,
 } from "./types";
 
 export const MOCK_COMMUNITY: Community = {
@@ -1596,6 +1602,238 @@ export const MOCK_MANAGERS: ManagerPermission[] = [
     can_moderate_content: true,
   },
 ];
+
+// ============================================================================
+// Growth Suite: Affiliate & Referral Program Demo Data
+// ============================================================================
+
+export const MOCK_AFFILIATE_CONFIG: AffiliateProgramConfig = {
+  is_enabled: true,
+  default_commission_pct: 30, // 30% recurring or one-time commission
+  cookie_duration_days: 60,
+  minimum_payout_amount: 50,
+  auto_approve_members: true,
+};
+
+export const MOCK_AFFILIATES: AffiliatePartner[] = [
+  {
+    id: "aff_001",
+    community_id: "comm_akschool_001",
+    member_id: "usr_admin_001",
+    referral_code: "AKAASH",
+    referral_url: "https://school.akstack.com/join?ref=AKAASH",
+    commission_rate_pct: 30,
+    total_clicks: 412,
+    total_referrals: 28,
+    total_revenue_generated: 4180,
+    unpaid_commission: 340,
+    paid_commission: 914,
+    payout_email: "akaash.payout@gmail.com",
+    payout_method: "paypal",
+    status: "active",
+    created_at: "2026-08-01T00:00:00Z",
+  },
+  {
+    id: "aff_002",
+    community_id: "comm_akschool_001",
+    member_id: "usr_sarah_002",
+    referral_code: "SARAHAI",
+    referral_url: "https://school.akstack.com/join?ref=SARAHAI",
+    commission_rate_pct: 30,
+    total_clicks: 295,
+    total_referrals: 19,
+    total_revenue_generated: 2750,
+    unpaid_commission: 245,
+    paid_commission: 580,
+    payout_email: "sarah.chen@payout.org",
+    payout_method: "stripe",
+    status: "active",
+    created_at: "2026-08-15T00:00:00Z",
+  },
+  {
+    id: "aff_003",
+    community_id: "comm_akschool_001",
+    member_id: "usr_marcus_003",
+    referral_code: "MARCUSDEV",
+    referral_url: "https://school.akstack.com/join?ref=MARCUSDEV",
+    commission_rate_pct: 25,
+    total_clicks: 140,
+    total_referrals: 8,
+    total_revenue_generated: 1192,
+    unpaid_commission: 118,
+    paid_commission: 180,
+    payout_email: "marcus.vance@bank.de",
+    payout_method: "bank_transfer",
+    status: "active",
+    created_at: "2026-09-01T00:00:00Z",
+  },
+];
+
+export const MOCK_CONVERSIONS: ReferralConversion[] = [
+  {
+    id: "conv_001",
+    affiliate_id: "aff_001",
+    buyer_id: "usr_priya_004",
+    buyer_name: "Priya Patel",
+    item_type: "course",
+    item_title: "Full-Stack AI Application Engineering (Lifetime)",
+    order_amount: 149,
+    commission_amount: 44.7,
+    currency: "USD",
+    status: "approved",
+    created_at: "2026-10-15T14:30:00Z",
+  },
+  {
+    id: "conv_002",
+    affiliate_id: "aff_001",
+    buyer_id: "usr_dev_005",
+    buyer_name: "Dev Patel",
+    item_type: "membership",
+    item_title: "Pro Creator Membership (Annual)",
+    order_amount: 290,
+    commission_amount: 87.0,
+    currency: "USD",
+    status: "approved",
+    created_at: "2026-10-14T09:15:00Z",
+  },
+  {
+    id: "conv_003",
+    affiliate_id: "aff_002",
+    buyer_id: "usr_guest_09",
+    buyer_name: "David Vance",
+    item_type: "membership",
+    item_title: "VIP Executive Plan",
+    order_amount: 99,
+    commission_amount: 29.7,
+    currency: "USD",
+    status: "pending",
+    created_at: "2026-10-16T11:00:00Z",
+  },
+];
+
+// ============================================================================
+// Growth Suite: Email & Newsletter Broadcasts Demo Data
+// ============================================================================
+
+export const MOCK_BROADCAST_TEMPLATES: BroadcastTemplate[] = [
+  {
+    id: "tmpl_01",
+    name: "Weekly Community Digest",
+    description: "Curated recap of top discussions, streak champions, and upcoming live rooms.",
+    category: "digest",
+    subject_template: "🔥 AKSchool Digest: Top discussions & this week's live coaching",
+    content_template: "<p>Hey {{member_name}},</p><p>Here is your weekly briefing from AKSchool:</p><ul><li><strong>Top Post:</strong> Multi-Agent LangGraph Swarms (84 likes)</li><li><strong>Streak Champ:</strong> Sarah Chen (9 days 🔥)</li></ul><p>Join us in the classroom!</p>",
+  },
+  {
+    id: "tmpl_02",
+    name: "New Flagship Course Launch",
+    description: "Announce a new course or curriculum module release to students.",
+    category: "announcement",
+    subject_template: "🚀 Just Launched: {{course_title}} is now live!",
+    content_template: "<p>Hi {{member_name}},</p><p>We just published a brand new curriculum: <strong>{{course_title}}</strong>.</p><p>Ready to upgrade your skillset? Start lesson 1 now.</p>",
+  },
+  {
+    id: "tmpl_03",
+    name: "VIP Masterclass Invitation",
+    description: "Private invite for VIPs to access executive private coaching sessions.",
+    category: "upsell",
+    subject_template: "⭐ VIP Private Coaching Session: Architecture Deep Dive",
+    content_template: "<p>Hello {{member_name}},</p><p>As a valued VIP member, you're invited to this Thursday's private zero-trust architectural review.</p>",
+  },
+];
+
+export const MOCK_BROADCASTS: EmailBroadcast[] = [
+  {
+    id: "bc_001",
+    community_id: "comm_akschool_001",
+    subject: "🔥 AKSchool Digest #42: Autonomous Swarms & Weekly Q&A",
+    preview_text: "Discover how to build resilient multi-agent swarms + live coaching schedule.",
+    content_html: "<p>Hey Builders,</p><p>Welcome to this week's community digest!</p><p>Check out our latest discussion threads on LangGraph production deployment.</p>",
+    audience: "all_members",
+    status: "sent",
+    recipient_count: 1248,
+    open_rate_pct: 44.8,
+    click_rate_pct: 19.2,
+    sent_at: "2026-10-14T08:00:00Z",
+    created_at: "2026-10-13T16:00:00Z",
+  },
+  {
+    id: "bc_002",
+    community_id: "comm_akschool_001",
+    subject: "🚀 VIP Executive Coaching: Enterprise Architecture Masterclass",
+    preview_text: "Exclusive live session link inside for VIP Executive members.",
+    content_html: "<p>VIP Members,</p><p>Join us tomorrow at 7 PM for our architectural review.</p>",
+    audience: "vip_only",
+    status: "sent",
+    recipient_count: 85,
+    open_rate_pct: 68.2,
+    click_rate_pct: 41.0,
+    sent_at: "2026-10-15T10:00:00Z",
+    created_at: "2026-10-15T08:00:00Z",
+  },
+  {
+    id: "bc_003",
+    community_id: "comm_akschool_001",
+    subject: "🎯 Weekend Workshop: Building Agentic Coding Tools in Next.js",
+    preview_text: "RSVP now for this Saturday's hands-on code-along.",
+    content_html: "<p>Hey Engineers,</p><p>We are going live this Saturday with a 2-hour coding workshop.</p>",
+    audience: "all_members",
+    status: "draft",
+    recipient_count: 1248,
+    created_at: "2026-10-16T10:00:00Z",
+  },
+];
+
+// ============================================================================
+// Growth Suite: Live Coaching & Meeting Rooms Demo Data
+// ============================================================================
+
+export const MOCK_LIVE_SESSIONS: LiveSessionRoom[] = [
+  {
+    id: "live_001",
+    community_id: "comm_akschool_001",
+    title: "Live Coaching: Zero-Trust Multi-Agent Swarms with LangGraph & Supabase RLS",
+    description: "Hands-on live architectural teardown, code walkthrough, and live Q&A with SuperAdmin Akaash Sharma.",
+    host_id: "usr_admin_001",
+    host_name: "Akaash Sharma (Super Admin)",
+    host_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    platform: "native",
+    join_url: "https://meet.jit.si/akschool-live-swarms-session-2026",
+    is_live_now: true, // Currently broadcasting!
+    scheduled_start: "2026-10-16T12:00:00Z",
+    duration_minutes: 90,
+    agenda: [
+      "Agentic Loop Design & Deadlock Recovery Patterns",
+      "Supabase Multi-Tenant RLS Policy Hardening",
+      "Stripe & PayPal Multi-Gateway Integration Teardown",
+      "Live Community Audience Q&A + Code Reviews",
+    ],
+    attendees_count: 42,
+    required_tier: "free",
+  },
+  {
+    id: "live_002",
+    community_id: "comm_akschool_001",
+    title: "VIP Executive Closed-Door War Room: Scaling to 100k Agents",
+    description: "Confidential infrastructure discussion covering Dokploy orchestration, Redis distributed rate-limiting, and GPU cluster caching.",
+    host_id: "usr_admin_001",
+    host_name: "Akaash Sharma (Super Admin)",
+    host_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    platform: "zoom",
+    join_url: "https://zoom.us/j/9876543210?pwd=samplepassword",
+    is_live_now: false,
+    scheduled_start: "2026-10-19T18:00:00Z",
+    duration_minutes: 60,
+    agenda: [
+      "Private GPU Cluster Benchmarking",
+      "Multi-Region Database Synchronization with CockroachDB",
+      "Enterprise Contract Security Reviews",
+    ],
+    attendees_count: 18,
+    required_tier: "vip",
+  },
+];
+
 
 
 

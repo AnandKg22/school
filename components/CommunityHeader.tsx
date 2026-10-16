@@ -30,6 +30,8 @@ import {
   MessageSquareReply,
   Plus,
   Video,
+  DollarSign,
+  Radio,
 } from "lucide-react";
 import { MOCK_MEMBERS, MOCK_COURSES } from "@/lib/school-mock";
 import { Member, Course } from "@/lib/types";
@@ -38,6 +40,8 @@ import { MembershipModal } from "./MembershipModal";
 import { ProfileModal } from "./ProfileModal";
 import { DirectMessagesDrawer } from "./DirectMessagesDrawer";
 import { EventsCalendarModal } from "./EventsCalendarModal";
+import { AffiliateModal } from "./AffiliateModal";
+import { LiveRoomModal } from "./LiveRoomModal";
 import {
   CreateCourseModal,
   CreateModuleModal,
@@ -149,6 +153,8 @@ export function CommunityHeader({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isAffiliateOpen, setIsAffiliateOpen] = useState(false);
+  const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
 
   // In-page Notifications state
   const [showNotifications, setShowNotifications] = useState(false);
@@ -401,6 +407,7 @@ export function CommunityHeader({
     { label: "Calendar", action: () => setIsCalendarOpen(true), icon: Calendar },
     { label: "Members", href: "/members", icon: Users },
     { label: "Leaderboards", href: "/members?tab=leaderboard", icon: Trophy },
+    { label: "Affiliates", action: () => setIsAffiliateOpen(true), icon: DollarSign },
     { label: "About", action: () => setIsAboutOpen(true), icon: Info },
     ...(isOwnerOrAdmin
       ? [
@@ -564,6 +571,16 @@ export function CommunityHeader({
                   <span className="hidden sm:inline">Ask Nova AI</span>
                 </button>
               )}
+
+              {/* Live Coaching & Meeting Room Trigger */}
+              <button
+                onClick={() => setIsLiveRoomOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black text-rose-700 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900 transition-all shadow-2xs hover:scale-[1.02]"
+                title="Join Live Coaching Call"
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+                <span className="hidden sm:inline">LIVE Room</span>
+              </button>
 
               {/* Daily Learning Streak Badge */}
               <StreakBadge memberId={currentMember?.id || "usr_admin_001"} />
@@ -893,6 +910,17 @@ export function CommunityHeader({
                         <span>Manage Membership Tier</span>
                       </button>
 
+                      <button
+                        onClick={() => {
+                          setShowMemberMenu(false);
+                          setIsAffiliateOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
+                      >
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Affiliate & Referral Hub</span>
+                      </button>
+
                       {isOwnerOrAdmin && (
                         <div className="border-t border-[#E2E8F0] dark:border-slate-700 my-1 pt-1 space-y-0.5">
                           <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
@@ -1171,6 +1199,20 @@ export function CommunityHeader({
         onClose={() => setIsMessagesDrawerOpen(false)}
         currentMember={currentMember}
         initialParticipantId={selectedDmParticipantId}
+      />
+
+      {/* Growth Suite: Affiliate & Referral Program Modal */}
+      <AffiliateModal
+        isOpen={isAffiliateOpen}
+        onClose={() => setIsAffiliateOpen(false)}
+        memberId={currentMember?.id || "usr_admin_001"}
+      />
+
+      {/* Growth Suite: Live Coaching & Meeting Room Modal */}
+      <LiveRoomModal
+        isOpen={isLiveRoomOpen}
+        onClose={() => setIsLiveRoomOpen(false)}
+        userTier={currentMember?.plan_tier || "free"}
       />
     </>
   );

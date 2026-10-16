@@ -32,6 +32,8 @@ import {
   RefreshCw,
   Zap,
   TrendingUp,
+  Mail,
+  Send,
 } from "lucide-react";
 import {
   MOCK_COMMUNITY,
@@ -59,10 +61,11 @@ import {
   CreateCommunityModal,
 } from "@/components/CurriculumModals";
 import { CreatorAnalyticsStudio } from "@/components/CreatorAnalyticsStudio";
+import { GrowthAdminStudio } from "@/components/GrowthAdminStudio";
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "analytics" | "courses" | "communities" | "branding" | "moderation" | "ai" | "plans" | "embed"
+    "overview" | "analytics" | "growth" | "courses" | "communities" | "branding" | "moderation" | "ai" | "plans" | "embed"
   >("overview");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
@@ -512,6 +515,7 @@ export default function AdminConsolePage() {
           {[
             { id: "overview", label: "Overview & KPIs", icon: Layers },
             { id: "analytics", label: "Creator Analytics & GTM", icon: TrendingUp },
+            { id: "growth", label: "Broadcasts & Affiliates", icon: Mail },
             { id: "courses", label: "Curriculum Studio", icon: BookOpen, count: courses.length },
             { id: "communities", label: "Communities", icon: Globe, count: communities.length },
             { id: "branding", label: "Branding & Rules", icon: Settings },
@@ -1719,6 +1723,9 @@ export default function AdminConsolePage() {
         {activeTab === "analytics" && (
           <CreatorAnalyticsStudio currentMemberRole={currentMember?.role} />
         )}
+
+        {/* Tab: Newsletters, Broadcasts & Affiliates */}
+        {activeTab === "growth" && <GrowthAdminStudio />}
       </main>
 
       <AiCopilotModal isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

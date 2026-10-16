@@ -501,4 +501,98 @@ export interface ManagerPermission {
   can_moderate_content: boolean;
 }
 
+// ============================================================================
+// Growth Suite: Affiliates, Email Broadcasts & Live Rooms
+// ============================================================================
+
+export interface AffiliatePartner {
+  id: string;
+  community_id: string;
+  member_id: string;
+  referral_code: string;
+  referral_url: string;
+  commission_rate_pct: number;
+  total_clicks: number;
+  total_referrals: number;
+  total_revenue_generated: number;
+  unpaid_commission: number;
+  paid_commission: number;
+  payout_email: string;
+  payout_method: "paypal" | "bank_transfer" | "stripe";
+  status: "active" | "pending" | "suspended";
+  created_at: string;
+}
+
+export interface ReferralConversion {
+  id: string;
+  affiliate_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  item_type: "membership" | "course";
+  item_title: string;
+  order_amount: number;
+  commission_amount: number;
+  currency: string;
+  status: "pending" | "approved" | "paid" | "rejected";
+  created_at: string;
+}
+
+export interface AffiliateProgramConfig {
+  is_enabled: boolean;
+  default_commission_pct: number;
+  cookie_duration_days: number;
+  minimum_payout_amount: number;
+  auto_approve_members: boolean;
+}
+
+export type BroadcastAudience = "all_members" | "pro_only" | "vip_only" | "free_only" | "course_students";
+
+export interface EmailBroadcast {
+  id: string;
+  community_id: string;
+  subject: string;
+  preview_text: string;
+  content_html: string;
+  audience: BroadcastAudience;
+  target_course_id?: string;
+  status: "draft" | "scheduled" | "sent";
+  recipient_count: number;
+  open_rate_pct?: number;
+  click_rate_pct?: number;
+  scheduled_at?: string;
+  sent_at?: string;
+  created_at: string;
+}
+
+export interface BroadcastTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: "digest" | "announcement" | "upsell" | "welcome";
+  subject_template: string;
+  content_template: string;
+}
+
+export type LiveRoomPlatform = "native" | "zoom" | "google_meet" | "youtube_live";
+
+export interface LiveSessionRoom {
+  id: string;
+  community_id: string;
+  title: string;
+  description: string;
+  host_id: string;
+  host_name: string;
+  host_avatar: string;
+  platform: LiveRoomPlatform;
+  join_url: string;
+  is_live_now: boolean;
+  scheduled_start: string;
+  duration_minutes: number;
+  agenda: string[];
+  attendees_count: number;
+  recording_url?: string;
+  required_tier: PlanTier;
+}
+
+
 
