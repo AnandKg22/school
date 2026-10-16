@@ -19,6 +19,8 @@ import {
   Moon,
   ExternalLink,
   Zap,
+  User,
+  Settings,
 } from "lucide-react";
 import { MOCK_COURSES, MOCK_MEMBERS, MOCK_POSTS } from "@/lib/school-mock";
 
@@ -122,6 +124,24 @@ export function CommandPaletteModal({
       icon: Users,
       action: () => { router.push("/members"); onClose(); },
       badge: "Social",
+    },
+    {
+      id: "nav-profile",
+      category: "Navigation",
+      title: "My Profile & Trophy Room",
+      subtitle: "View your verified certificates, streaks, and achievements",
+      icon: User,
+      action: () => { router.push("/profile"); onClose(); },
+      badge: "Trophy",
+    },
+    {
+      id: "nav-settings",
+      category: "Navigation",
+      title: "Account Settings & Invoicing",
+      subtitle: "Manage billing, subscription tiers, tax receipts, and 2FA",
+      icon: Settings,
+      action: () => { router.push("/settings"); onClose(); },
+      badge: "Account",
     },
     {
       id: "nav-admin",

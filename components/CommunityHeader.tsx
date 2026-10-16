@@ -32,6 +32,7 @@ import {
   Video,
   DollarSign,
   Radio,
+  Settings,
 } from "lucide-react";
 import { MOCK_MEMBERS, MOCK_COURSES } from "@/lib/school-mock";
 import { Member, Course } from "@/lib/types";
@@ -937,6 +938,15 @@ export function CommunityHeader({
                         <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Affiliate & Referral Hub</span>
                       </button>
+
+                      <Link
+                        href="/settings"
+                        onClick={() => setShowMemberMenu(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                        <span>Account Settings & Invoicing</span>
+                      </Link>
 
                       {isOwnerOrAdmin && (
                         <div className="border-t border-[#E2E8F0] dark:border-slate-700 my-1 pt-1 space-y-0.5">
