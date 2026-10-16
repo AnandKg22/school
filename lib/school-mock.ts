@@ -29,6 +29,7 @@ import {
   EmailBroadcast,
   BroadcastTemplate,
   LiveSessionRoom,
+  EventReplay,
 } from "./types";
 
 export const MOCK_COMMUNITY: Community = {
@@ -1833,6 +1834,68 @@ export const MOCK_LIVE_SESSIONS: LiveSessionRoom[] = [
     required_tier: "vip",
   },
 ];
+
+export const MOCK_EVENT_REPLAYS: EventReplay[] = [
+  {
+    id: "rep_001",
+    title: "Masterclass Replay: Multi-Agent Consensus & Fallback Orchestration",
+    description: "Deep dive into LangGraph state machine loops, resilient human-in-the-loop gates, and token budget governors.",
+    speaker: "Akaash Sharma",
+    speaker_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    recorded_at: "2026-10-12T18:00:00Z",
+    duration: "1h 14m",
+    video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    thumbnail_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+    required_tier: "free",
+    views_count: 512,
+    slides_url: "https://school.akstack.com/downloads/multi-agent-consensus-slides.pdf",
+    timestamps: [
+      { time: "00:00", label: "Kickoff & Architecture Principles" },
+      { time: "14:30", label: "LangGraph StateGraph Setup" },
+      { time: "32:15", label: "Handling Tool Failures & Exponential Backoff" },
+      { time: "58:00", label: "Live Q&A: RAG Latency vs Accuracy" },
+    ],
+  },
+  {
+    id: "rep_002",
+    title: "Workshop Replay: Multi-Tenant Supabase RLS & JWT Claims Isolation",
+    description: "How to safely isolate customer organizations with PostgreSQL Row Level Security policies and zero code leaks.",
+    speaker: "Sarah Chen",
+    speaker_avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
+    recorded_at: "2026-10-05T17:00:00Z",
+    duration: "58m",
+    video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    thumbnail_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80",
+    required_tier: "pro",
+    views_count: 389,
+    slides_url: "https://school.akstack.com/downloads/supabase-rls-blueprints.pdf",
+    timestamps: [
+      { time: "00:00", label: "The Tenant Leak Attack Vector" },
+      { time: "18:45", label: "Writing Hardened USING/WITH CHECK Policies" },
+      { time: "41:20", label: "Testing Policies with Vitest & Service Keys" },
+    ],
+  },
+  {
+    id: "rep_003",
+    title: "Executive War Room Replay: Stripe Billing Webhook Resiliency & Churn Mitigation",
+    description: "Architecting idempotent payment webhooks, subscription lifecycle events, and automated failed-payment recovery flows.",
+    speaker: "Marcus Vance",
+    speaker_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    recorded_at: "2026-09-28T16:00:00Z",
+    duration: "1h 05m",
+    video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    thumbnail_url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
+    required_tier: "vip",
+    views_count: 245,
+    slides_url: "https://school.akstack.com/downloads/stripe-webhook-resilience.pdf",
+    timestamps: [
+      { time: "00:00", label: "Webhook Signature Verification Under Attack" },
+      { time: "22:10", label: "Idempotency Keys with Redis Caching" },
+      { time: "48:30", label: "Dunning Emails & Customer Retention" },
+    ],
+  },
+];
+
 
 
 

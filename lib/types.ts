@@ -594,5 +594,27 @@ export interface LiveSessionRoom {
   required_tier: PlanTier;
 }
 
+export interface EventReplayTimestamp {
+  time: string;
+  label: string;
+}
+
+export interface EventReplay {
+  id: string;
+  title: string;
+  description: string;
+  speaker: string;
+  speaker_avatar: string;
+  recorded_at: string;
+  duration: string;
+  video_url: string;
+  thumbnail_url: string;
+  required_tier: PlanTier;
+  views_count: number;
+  slides_url?: string;
+  timestamps: EventReplayTimestamp[];
+}
+
+
 
 
