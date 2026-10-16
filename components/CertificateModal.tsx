@@ -15,6 +15,12 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  React.useEffect(() => {
+    if (isOpen && certificate && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("school:celebrate", { detail: { durationMs: 4000 } }));
+    }
+  }, [isOpen, certificate]);
+
   if (!isOpen || !certificate) return null;
 
   const handlePrint = () => {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppGlobalProviders } from "@/components/AppGlobalProviders";
 
 export const metadata: Metadata = {
   title: "AKSchool | Community, Learning & Academy Platform",
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] text-[#475569] dark:text-slate-100 transition-colors duration-150">
-        {children}
+        <AppGlobalProviders>{children}</AppGlobalProviders>
       </body>
     </html>
   );
