@@ -31,6 +31,7 @@ import {
   EyeOff,
   RefreshCw,
   Zap,
+  TrendingUp,
 } from "lucide-react";
 import {
   MOCK_COMMUNITY,
@@ -57,10 +58,11 @@ import {
   CreateLessonModal,
   CreateCommunityModal,
 } from "@/components/CurriculumModals";
+import { CreatorAnalyticsStudio } from "@/components/CreatorAnalyticsStudio";
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "courses" | "communities" | "branding" | "moderation" | "ai" | "plans" | "embed"
+    "overview" | "analytics" | "courses" | "communities" | "branding" | "moderation" | "ai" | "plans" | "embed"
   >("overview");
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
@@ -509,6 +511,7 @@ export default function AdminConsolePage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
           {[
             { id: "overview", label: "Overview & KPIs", icon: Layers },
+            { id: "analytics", label: "Creator Analytics & GTM", icon: TrendingUp },
             { id: "courses", label: "Curriculum Studio", icon: BookOpen, count: courses.length },
             { id: "communities", label: "Communities", icon: Globe, count: communities.length },
             { id: "branding", label: "Branding & Rules", icon: Settings },
@@ -1710,6 +1713,11 @@ export default function AdminConsolePage() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Tab: Creator Analytics & GTM */}
+        {activeTab === "analytics" && (
+          <CreatorAnalyticsStudio currentMemberRole={currentMember?.role} />
         )}
       </main>
 

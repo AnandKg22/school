@@ -82,11 +82,14 @@
   - [x] Events Calendar: Build `/community` modal & subnav calendar (`EventsCalendarModal.tsx`) with category filters, interactive RSVP attendance toggling, RFC 5545 `.ics` file generator, 1-click Google Calendar integration, and endpoint `/api/v1/community/events/[id]/ics`.
   - [x] Direct Messaging: Build 1-on-1 private messaging drawer (`DirectMessagesDrawer.tsx`) with instant message composer, unread badges, conversation thread history, and API `/api/v1/community/messages`.
 
-- [ ] **Pillar 6: Creator Analytics & Funnel Insights**
-  - [ ] Telemetry API: Implement `/api/v1/admin/analytics/funnel` and `/api/v1/admin/analytics/revenue`.
-  - [ ] Funnel View: Visual drop-off chart showing student progression from Lesson 1 to completion.
-  - [ ] Revenue Dashboard: Display MRR, ARR, churn rate, and active subscriber metrics in `/admin`.
-  - [ ] CSV Export: Export member rosters and quiz gradebooks.
+- [x] **Pillar 6: Creator Analytics, GTM Engineering & Delegated Views (RBAC)**
+  - [x] Schema: Create `app_school_gtm_events`, `app_school_manager_permissions`, and `app_school_analytics_daily_aggregates` in migration `007_creator_analytics_gtm_rbac.sql` with strict tenant isolation RLS.
+  - [x] Financial & Churn Engine: Implement MRR, ARR, growth %, ARPU, LTV, voluntary vs delinquent churn breakdown, and gateway revenue attribution in `/api/v1/analytics/overview`.
+  - [x] Course Completion Funnels: Track enrolled $\rightarrow$ started $\rightarrow$ halfway $\rightarrow$ completed $\rightarrow$ certified funnel progression, quiz pass rates, and automatic friction point drop-off detection.
+  - [x] GTM Interaction Logs Stream: Capture real customer interactions with UTM tags, lifecycle stages (`visitor`, `lead`, `activated`, `paying_customer`, `vip`), and RFC 4180 standard CSV export in `/api/v1/analytics/gtm/logs`.
+  - [x] Manager RBAC & Delegated Views: SuperAdmin manager team management (`/api/v1/admin/managers`) allowing invite, granular permission toggles (`can_view_revenue`, `can_view_gtm_logs`, `can_view_lms_analytics`, `can_view_community_metrics`, `can_export_reports`), and access revocation.
+  - [x] UI Studio: Built `CreatorAnalyticsStudio.tsx` interactive dashboard with Executive Overview, MRR & Churn Breakdown, Course Funnels, Real-time GTM Log Stream with search/filter, and Manager Delegation Studio. Mounted seamlessly into `/admin`.
+
 
 - [ ] **Pillar 7: Website Integration & Embeddable Widgets**
   - [ ] Lightweight Embed Route: Build `/embed/community/[slug]` without shell nav for Webflow/Framer.

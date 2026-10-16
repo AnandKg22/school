@@ -341,3 +341,164 @@ export interface Invoice {
   created_at: string;
 }
 
+// ============================================================================
+// Pillar 6: Creator Analytics, GTM Engineering & Delegated Views (RBAC)
+// ============================================================================
+
+export interface RevenueMetrics {
+  mrr: number;
+  arr: number;
+  growth_rate_pct: number;
+  net_revenue_30d: number;
+  arpu: number;
+  ltv: number;
+  by_gateway: {
+    stripe: number;
+    paypal: number;
+  };
+  by_tier: {
+    pro: number;
+    vip: number;
+    standalone_courses: number;
+  };
+}
+
+export interface ChurnMetrics {
+  churn_rate_pct: number;
+  voluntary_cancellations_30d: number;
+  payment_failures_30d: number;
+  net_mrr_churn: number;
+  retention_rate_pct: number;
+  at_risk_members_count: number;
+}
+
+export interface CourseFunnelMetric {
+  course_id: string;
+  course_title: string;
+  enrolled_count: number;
+  started_count: number;
+  halfway_count: number;
+  completed_count: number;
+  completion_rate_pct: number;
+  average_days_to_finish: number;
+  quiz_pass_rate_pct: number;
+  certificates_issued_count: number;
+  top_dropoff_lesson?: {
+    module_id: string;
+    lesson_id: string;
+    lesson_title: string;
+    dropoff_pct: number;
+  };
+}
+
+export interface CommunityEngagementMetrics {
+  dau: number;
+  wau: number;
+  mau: number;
+  stickiness_ratio: number; // DAU / MAU * 100
+  total_posts_30d: number;
+  total_comments_30d: number;
+  total_poll_votes_30d: number;
+  total_dms_sent_30d: number;
+  total_event_rsvps_30d: number;
+  top_contributors: Array<{
+    member_id: string;
+    name: string;
+    avatar_url: string;
+    xp: number;
+    level: number;
+    posts_count: number;
+  }>;
+}
+
+export interface AnalyticsSummary {
+  community_id: string;
+  timestamp: string;
+  revenue: RevenueMetrics;
+  churn: ChurnMetrics;
+  courses: CourseFunnelMetric[];
+  engagement: CommunityEngagementMetrics;
+}
+
+export type GTMLifecycleStage = 
+  | "visitor" 
+  | "lead" 
+  | "activated" 
+  | "engaged" 
+  | "paying_customer" 
+  | "vip" 
+  | "at_risk" 
+  | "churned";
+
+export type GTMEventType =
+  | "user_registered"
+  | "community_joined"
+  | "course_viewed"
+  | "paywall_hit"
+  | "checkout_initiated"
+  | "checkout_completed"
+  | "tier_upgraded"
+  | "lesson_started"
+  | "lesson_completed"
+  | "quiz_attempted"
+  | "certificate_claimed"
+  | "post_created"
+  | "poll_voted"
+  | "dm_sent"
+  | "event_rsvped"
+  | "subscription_cancelled";
+
+export interface GTMInteractionLog {
+  id: string;
+  community_id: string;
+  member_id?: string;
+  member_name?: string;
+  member_email?: string;
+  event_type: GTMEventType;
+  lifecycle_stage: GTMLifecycleStage;
+  target_id?: string;
+  target_name?: string;
+  metadata: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    referrer?: string;
+    device?: string;
+    country?: string;
+    amount?: number;
+    currency?: string;
+    provider?: "stripe" | "paypal";
+    plan_tier?: PlanTier;
+    [key: string]: any;
+  };
+  created_at: string;
+}
+
+export type ManagerRoleTitle = 
+  | "growth_lead" 
+  | "community_manager" 
+  | "course_director" 
+  | "operations_manager" 
+  | "support_lead";
+
+export interface ManagerPermission {
+  id: string;
+  community_id: string;
+  member_id: string;
+  member_name: string;
+  member_email: string;
+  role_title: ManagerRoleTitle;
+  custom_title?: string;
+  status: "active" | "invited" | "suspended";
+  created_at: string;
+  // Granular View & Action Permissions
+  can_view_revenue: boolean;
+  can_view_gtm_logs: boolean;
+  can_view_lms_analytics: boolean;
+  can_view_community_metrics: boolean;
+  can_export_reports: boolean;
+  can_manage_curriculum: boolean;
+  can_moderate_content: boolean;
+}
+
+
