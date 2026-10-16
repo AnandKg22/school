@@ -42,6 +42,7 @@ import { DirectMessagesDrawer } from "./DirectMessagesDrawer";
 import { EventsCalendarModal } from "./EventsCalendarModal";
 import { AffiliateModal } from "./AffiliateModal";
 import { LiveRoomModal } from "./LiveRoomModal";
+import { CommandPaletteModal } from "./CommandPaletteModal";
 import {
   CreateCourseModal,
   CreateModuleModal,
@@ -155,6 +156,19 @@ export function CommunityHeader({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isAffiliateOpen, setIsAffiliateOpen] = useState(false);
   const [isLiveRoomOpen, setIsLiveRoomOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Cmd+K / Ctrl+K keyboard shortcut listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   // In-page Notifications state
   const [showNotifications, setShowNotifications] = useState(false);
@@ -404,10 +418,10 @@ export function CommunityHeader({
   const subNavTabs = [
     { label: "Community", href: "/community", icon: MessageSquare },
     { label: "Classroom", href: "/classroom", icon: BookOpen },
-    { label: "Calendar", action: () => setIsCalendarOpen(true), icon: Calendar },
+    { label: "Calendar", href: "/events", icon: Calendar },
     { label: "Members", href: "/members", icon: Users },
-    { label: "Leaderboards", href: "/members?tab=leaderboard", icon: Trophy },
-    { label: "Affiliates", action: () => setIsAffiliateOpen(true), icon: DollarSign },
+    { label: "Leaderboards", href: "/leaderboard", icon: Trophy },
+    { label: "Affiliates", href: "/affiliates", icon: DollarSign },
     { label: "About", action: () => setIsAboutOpen(true), icon: Info },
     ...(isOwnerOrAdmin
       ? [
@@ -439,18 +453,21 @@ export function CommunityHeader({
               </Link>
             </div>
 
-            {/* Center: Search Bar (as shown in Skool screenshot) */}
+            {/* Center: Search Bar with Cmd+K Command Palette Trigger */}
             <div className="flex-1 max-w-xl mx-2 hidden sm:block">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search discussions, courses, members..."
-                  value={searchValue}
-                  onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-xs rounded-full bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all shadow-inner"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsCommandPaletteOpen(true)}
+                className="w-full relative flex items-center justify-between pl-9 pr-3 py-2 text-xs rounded-full bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:border-blue-400 dark:hover:border-blue-600 transition-all shadow-inner text-left group"
+              >
+                <Search className="w-4 h-4 text-slate-400 group-hover:text-blue-500 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors" />
+                <span className="truncate">
+                  {searchValue || "Search discussions, courses, members... (Press ⌘K)"}
+                </span>
+                <kbd className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md shrink-0 shadow-2xs">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </button>
             </div>
 
             {/* Right: Actions, AI Buddy Trigger, Notifications, Profile Switcher */}
@@ -1213,6 +1230,15 @@ export function CommunityHeader({
         isOpen={isLiveRoomOpen}
         onClose={() => setIsLiveRoomOpen(false)}
         userTier={currentMember?.plan_tier || "free"}
+      />
+
+      {/* Global Cmd+K Command Palette Modal */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onOpenLiveRoom={() => setIsLiveRoomOpen(true)}
+        onOpenAffiliate={() => setIsAffiliateOpen(true)}
+        onToggleTheme={toggleDarkMode}
       />
     </>
   );
